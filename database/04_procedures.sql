@@ -707,3 +707,63 @@ BEGIN
     COMMIT TRANSACTION;
 END
 GO
+
+CREATE OR ALTER PROCEDURE dbo.sp_ListarGeneros
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    SELECT GeneroId AS Id, Nombre, Slug
+    FROM dbo.Genero
+    ORDER BY Nombre;
+END
+GO
+
+CREATE OR ALTER PROCEDURE dbo.sp_ListarPlataformas
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    SELECT PlataformaId AS Id, Nombre, Slug
+    FROM dbo.Plataforma
+    ORDER BY Nombre;
+END
+GO
+
+CREATE OR ALTER PROCEDURE dbo.sp_IniciarSincronizacion
+    @Origen             VARCHAR(20),
+    @ParametrosConsulta NVARCHAR(500) = NULL
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    INSERT INTO dbo.SincronizacionApi (Origen, ParametrosConsulta)
+    VALUES (@Origen, @ParametrosConsulta);
+
+    SELECT CAST(SCOPE_IDENTITY() AS INT) AS SincronizacionId;
+END
+GO
+
+CREATE OR ALTER PROCEDURE dbo.sp_FinalizarSincronizacion
+    @SincronizacionId INT,
+    @Estado           VARCHAR(15),
+    @Insertados       INT,
+    @Actualizados     INT,
+    @ConError         INT,
+    @Reintentos       TINYINT,
+    @MensajeError     NVARCHAR(1000) = NULL
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    UPDATE dbo.SincronizacionApi
+    SET FechaFin = SYSUTCDATETIME(),
+        Estado = @Estado,
+        RegistrosInsertados = @Insertados,
+        RegistrosActualizados = @Actualizados,
+        RegistrosConError = @ConError,
+        Reintentos = @Reintentos,
+        MensajeError = @MensajeError
+    WHERE SincronizacionId = @SincronizacionId;
+END
+GO
