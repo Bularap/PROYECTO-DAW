@@ -817,3 +817,100 @@ BEGIN
     ORDER BY Fecha DESC, j.Titulo;
 END
 GO
+
+CREATE OR ALTER PROCEDURE dbo.sp_ListarModeracion
+    @Filtro        VARCHAR(12),
+    @Pagina        INT,
+    @TamanioPagina INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    SELECT r.ResenaId, r.JuegoId, j.Titulo, r.UsuarioId, u.NombreUsuario,
+           u.Bloqueado AS AutorBloqueado, r.Contenido, r.Estado, r.FechaPublicacion,
+           p.CantidadReportes, p.UltimoReporte, p.Motivos,
+           COUNT(*) OVER () AS Total
+    FROM dbo.Resena r
+    JOIN dbo.Usuario u ON u.UsuarioId = r.UsuarioId
+    JOIN dbo.Juego j ON j.JuegoId = r.JuegoId
+    OUTER APPLY (
+        SELECT COUNT(*) AS CantidadReportes,
+               MAX(rr.FechaReporte) AS UltimoReporte,
+               STRING_AGG(rr.Motivo, ', ') AS Motivos
+        FROM dbo.ReporteResena rr
+        WHERE rr.ResenaId = r.ResenaId AND rr.Resuelto = 0
+    ) p
+    WHERE @Filtro = 'RECIENTES'
+       OR (@Filtro = 'REPORTADAS' AND p.CantidadReportes > 0)
+       OR (@Filtro = 'OCULTAS' AND r.Estado = 'O')
+    ORDER BY
+        CASE WHEN @Filtro = 'REPORTADAS' THEN p.CantidadReportes END DESC,
+        r.FechaPublicacion DESC,
+        r.ResenaId DESC
+    OFFSET (@Pagina - 1) * @TamanioPagina ROWS
+    FETCH NEXT @TamanioPagina ROWS ONLY;
+END
+GO
+
+CREATE OR ALTER PROCEDURE dbo.sp_ListarUsuarios
+    @Texto          NVARCHAR(100) = NULL,
+    @SoloBloqueados BIT = 0,
+    @Pagina         INT,
+    @TamanioPagina  INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    SELECT u.UsuarioId, u.NombreUsuario, u.Email, u.RolId, u.Bloqueado, u.FechaRegistro, u.UltimoLogin,
+           COUNT(*) OVER () AS Total
+    FROM dbo.Usuario u
+    WHERE (@SoloBloqueados = 0 OR u.Bloqueado = 1)
+      AND (@Texto IS NULL
+           OR u.NombreUsuario LIKE N'%' + @Texto + N'%'
+           OR u.Email LIKE N'%' + @Texto + N'%')
+    ORDER BY u.NombreUsuario
+    OFFSET (@Pagina - 1) * @TamanioPagina ROWS
+    FETCH NEXT @TamanioPagina ROWS ONLY;
+END
+GO
+
+CREATE OR ALTER PROCEDURE dbo.sp_ListarRoles
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    SELECT RolId, Nombre, Descripcion
+    FROM dbo.Rol
+    ORDER BY RolId;
+END
+GO
+
+CREATE OR ALTER PROCEDURE dbo.sp_ListarAuditoria
+    @Pagina        INT,
+    @TamanioPagina INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    SELECT a.AuditoriaId, a.UsuarioActorId, u.NombreUsuario AS Actor, a.Accion, a.EntidadTipo,
+           a.EntidadId, a.Motivo, a.Detalle, a.Fecha,
+           COUNT(*) OVER () AS Total
+    FROM dbo.Auditoria a
+    JOIN dbo.Usuario u ON u.UsuarioId = a.UsuarioActorId
+    ORDER BY a.Fecha DESC, a.AuditoriaId DESC
+    OFFSET (@Pagina - 1) * @TamanioPagina ROWS
+    FETCH NEXT @TamanioPagina ROWS ONLY;
+END
+GO
+
+CREATE OR ALTER PROCEDURE dbo.sp_ObtenerPasswordHash
+    @UsuarioId INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    SELECT PasswordHash
+    FROM dbo.Usuario
+    WHERE UsuarioId = @UsuarioId;
+END
+GO

@@ -57,6 +57,19 @@ public class AuthBLL
 
     public Task Logout(string token) => _dal.CerrarSesion(TokenServicio.Hashear(token));
 
+    public async Task EliminarCuenta(int usuarioId, string? password)
+    {
+        var clave = password ?? "";
+        if (clave.Length == 0)
+            throw new AppException(400, "Debe ingresar su contraseña para eliminar la cuenta.");
+
+        var hash = await _dal.ObtenerPasswordHash(usuarioId);
+        if (!HashServicio.Verificar(clave, hash))
+            throw new AppException(403, "La contraseña es incorrecta.");
+
+        await _dal.Eliminar(usuarioId);
+    }
+
     private async Task<SesionIniciada> IniciarSesion(Usuario usuario, string? ip)
     {
         var token = TokenServicio.Generar();

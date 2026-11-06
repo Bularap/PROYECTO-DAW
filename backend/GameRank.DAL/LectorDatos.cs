@@ -30,4 +30,7 @@ public static class LectorDatos
 
     public static DateTime FechaUtc(SqlDataReader lector, string columna) =>
         DateTime.SpecifyKind(lector.GetDateTime(lector.GetOrdinal(columna)), DateTimeKind.Utc);
+
+    public static DateTime? FechaUtcONula(SqlDataReader lector, string columna) =>
+        lector.IsDBNull(lector.GetOrdinal(columna)) ? null : FechaUtc(lector, columna);
 }

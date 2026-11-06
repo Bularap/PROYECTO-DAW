@@ -54,5 +54,13 @@ public class AuthController : ControllerBase
         });
     }
 
+    [Authorize]
+    [HttpPost("baja")]
+    public async Task<IActionResult> Baja(BajaPedido pedido)
+    {
+        await _auth.EliminarCuenta(User.Id(), pedido.Password);
+        return NoContent();
+    }
+
     private string? Ip() => HttpContext.Connection.RemoteIpAddress?.ToString();
 }

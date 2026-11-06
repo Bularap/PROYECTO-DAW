@@ -83,6 +83,26 @@ public class UsuarioDAL
         });
     }
 
+    public Task<string?> ObtenerPasswordHash(int usuarioId)
+    {
+        return _datos.Ejecutar(async conexion =>
+        {
+            await using var comando = AccesoDatos.Procedimiento(conexion, "dbo.sp_ObtenerPasswordHash");
+            comando.Parameters.AddWithValue("@UsuarioId", usuarioId);
+            return (string?)await comando.ExecuteScalarAsync();
+        });
+    }
+
+    public Task Eliminar(int usuarioId)
+    {
+        return _datos.Ejecutar(async conexion =>
+        {
+            await using var comando = AccesoDatos.Procedimiento(conexion, "dbo.sp_EliminarUsuario");
+            comando.Parameters.AddWithValue("@UsuarioId", usuarioId);
+            return await comando.ExecuteNonQueryAsync();
+        });
+    }
+
     private static Usuario LeerUsuario(SqlDataReader lector) => new()
     {
         UsuarioId = lector.GetInt32(lector.GetOrdinal("UsuarioId")),

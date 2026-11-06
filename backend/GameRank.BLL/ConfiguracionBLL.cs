@@ -30,6 +30,10 @@ public static class ConfiguracionBLL
         servicios.AddScoped<BibliotecaBLL>();
         servicios.AddScoped<PerfilDAL>();
         servicios.AddScoped<PerfilBLL>();
+        servicios.AddScoped<ModeracionDAL>();
+        servicios.AddScoped<ModeracionBLL>();
+        servicios.AddScoped<AdministracionDAL>();
+        servicios.AddScoped<AdministracionBLL>();
         return servicios;
     }
 }
