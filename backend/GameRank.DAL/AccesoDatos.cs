@@ -1,3 +1,4 @@
+using System.Data;
 using GameRank.Services;
 using Microsoft.Data.SqlClient;
 
@@ -5,6 +6,9 @@ namespace GameRank.DAL;
 
 public class AccesoDatos
 {
+    private const int ClaveDuplicada = 2627;
+    private const int IndiceDuplicado = 2601;
+
     private readonly string _cadena;
 
     public AccesoDatos(string cadena)
@@ -24,5 +28,12 @@ public class AccesoDatos
         {
             throw new AppException(ex.Number - 50000, ex.Message);
         }
+        catch (SqlException ex) when (ex.Number == ClaveDuplicada || ex.Number == IndiceDuplicado)
+        {
+            throw new AppException(409, "El registro ya existe.");
+        }
     }
+
+    public static SqlCommand Procedimiento(SqlConnection conexion, string nombre) =>
+        new(nombre, conexion) { CommandType = CommandType.StoredProcedure };
 }

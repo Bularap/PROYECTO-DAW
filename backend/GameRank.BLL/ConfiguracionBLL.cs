@@ -10,6 +10,8 @@ public static class ConfiguracionBLL
         servicios.AddSingleton(new AccesoDatos(cadena));
         servicios.AddScoped<SaludDAL>();
         servicios.AddScoped<SaludBLL>();
+        servicios.AddScoped<UsuarioDAL>();
+        servicios.AddScoped<AuthBLL>();
         return servicios;
     }
 }
