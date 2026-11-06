@@ -1,0 +1,17 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <ItemGroup>
+    <ProjectReference Include="..\GameRank.BE\GameRank.BE.csproj" />
+    <ProjectReference Include="..\GameRank.BLL\GameRank.BLL.csproj" />
+    <ProjectReference Include="..\GameRank.Services\GameRank.Services.csproj" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <DisableTransitiveProjectReferences>true</DisableTransitiveProjectReferences>
+    <UserSecretsId>79e2e0ad-35e3-426c-8fc6-ca522528d9c3</UserSecretsId>
+  </PropertyGroup>
+
+</Project>
