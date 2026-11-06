@@ -48,7 +48,7 @@ public class AuthController : ControllerBase
     {
         return Ok(new Usuario
         {
-            UsuarioId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!),
+            UsuarioId = User.Id(),
             NombreUsuario = User.Identity!.Name!,
             Rol = User.FindFirstValue(ClaimTypes.Role)!
         });

@@ -2,6 +2,7 @@ using System.Data;
 using GameRank.BE;
 using GameRank.Services;
 using Microsoft.Data.SqlClient;
+using static GameRank.DAL.LectorDatos;
 
 namespace GameRank.DAL;
 
@@ -57,8 +58,8 @@ public class CatalogoDAL
             {
                 Sinopsis = TextoONulo(lector, "Sinopsis"),
                 RatingRawg = DecimalONulo(lector, "RatingRawg"),
-                Metacritic = lector.IsDBNull(lector.GetOrdinal("Metacritic")) ? null : lector.GetByte(lector.GetOrdinal("Metacritic")),
-                FechaSincronizacion = lector.GetDateTime(lector.GetOrdinal("FechaSincronizacion"))
+                Metacritic = ByteONulo(lector, "Metacritic"),
+                FechaSincronizacion = FechaUtc(lector, "FechaSincronizacion")
             };
             LeerResumen(lector, ficha);
 
@@ -136,17 +137,5 @@ public class CatalogoDAL
         juego.FechaLanzamiento = lector.IsDBNull(fecha) ? null : DateOnly.FromDateTime(lector.GetDateTime(fecha));
         juego.PromedioCalificacion = DecimalONulo(lector, "PromedioCalificacion");
         juego.CantidadCalificaciones = lector.GetInt32(lector.GetOrdinal("CantidadCalificaciones"));
-    }
-
-    private static string? TextoONulo(SqlDataReader lector, string columna)
-    {
-        var indice = lector.GetOrdinal(columna);
-        return lector.IsDBNull(indice) ? null : lector.GetString(indice);
-    }
-
-    private static decimal? DecimalONulo(SqlDataReader lector, string columna)
-    {
-        var indice = lector.GetOrdinal(columna);
-        return lector.IsDBNull(indice) ? null : lector.GetDecimal(indice);
     }
 }

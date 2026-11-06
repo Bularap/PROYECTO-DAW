@@ -8,10 +8,12 @@ namespace GameRank.API.Controllers;
 public class CatalogoController : ControllerBase
 {
     private readonly CatalogoBLL _catalogo;
+    private readonly BibliotecaBLL _biblioteca;
 
-    public CatalogoController(CatalogoBLL catalogo)
+    public CatalogoController(CatalogoBLL catalogo, BibliotecaBLL biblioteca)
     {
         _catalogo = catalogo;
+        _biblioteca = biblioteca;
     }
 
     [HttpGet("generos")]
@@ -19,4 +21,7 @@ public class CatalogoController : ControllerBase
 
     [HttpGet("plataformas")]
     public async Task<IActionResult> Plataformas() => Ok(await _catalogo.ListarPlataformas());
+
+    [HttpGet("estados-lista")]
+    public async Task<IActionResult> EstadosLista() => Ok(await _biblioteca.ListarEstados());
 }

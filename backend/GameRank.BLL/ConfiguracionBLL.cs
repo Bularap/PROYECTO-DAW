@@ -24,6 +24,12 @@ public static class ConfiguracionBLL
         servicios.AddScoped<SincronizacionDAL>();
         servicios.AddScoped<SincronizacionBLL>();
         servicios.AddScoped<CatalogoBLL>();
+        servicios.AddScoped<ValoracionDAL>();
+        servicios.AddScoped<ValoracionBLL>();
+        servicios.AddScoped<BibliotecaDAL>();
+        servicios.AddScoped<BibliotecaBLL>();
+        servicios.AddScoped<PerfilDAL>();
+        servicios.AddScoped<PerfilBLL>();
         return servicios;
     }
 }
