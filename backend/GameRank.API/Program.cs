@@ -1,6 +1,7 @@
 using GameRank.API;
 using GameRank.API.Seguridad;
 using GameRank.BLL;
+using GameRank.Services;
 using GameRank.Services.Rawg;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Mvc;
@@ -13,7 +14,8 @@ builder.Services.AddControllers()
             new BadRequestObjectResult(new { mensaje = "La solicitud no es válida." }));
 
 var rawg = builder.Configuration.GetSection("Rawg").Get<ConfiguracionRawg>() ?? new ConfiguracionRawg();
-builder.Services.AgregarCapas(builder.Configuration.GetConnectionString("GameRank")!, rawg);
+var respaldo = builder.Configuration.GetSection("Respaldo").Get<ConfiguracionRespaldo>() ?? new ConfiguracionRespaldo();
+builder.Services.AgregarCapas(builder.Configuration.GetConnectionString("GameRank")!, rawg, respaldo);
 builder.Services.AddHostedService<SincronizacionProgramada>();
 
 builder.Services.AddAuthentication(TokenAuthHandler.Esquema)

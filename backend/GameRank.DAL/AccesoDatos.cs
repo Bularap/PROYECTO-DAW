@@ -34,6 +34,19 @@ public class AccesoDatos
         }
     }
 
+    public async Task<T> EjecutarEnMaster<T>(Func<SqlConnection, string, Task<T>> operacion)
+    {
+        var constructor = new SqlConnectionStringBuilder(_cadena);
+        var baseDatos = constructor.InitialCatalog;
+        constructor.InitialCatalog = "master";
+
+        await using var conexion = new SqlConnection(constructor.ConnectionString);
+        await conexion.OpenAsync();
+        return await operacion(conexion, baseDatos);
+    }
+
+    public static void LimpiarConexiones() => SqlConnection.ClearAllPools();
+
     public static SqlCommand Procedimiento(SqlConnection conexion, string nombre) =>
         new(nombre, conexion) { CommandType = CommandType.StoredProcedure };
 }

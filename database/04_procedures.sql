@@ -914,3 +914,155 @@ BEGIN
     WHERE UsuarioId = @UsuarioId;
 END
 GO
+
+CREATE OR ALTER PROCEDURE dbo.sp_IniciarRespaldo
+    @UsuarioId   INT,
+    @Tipo        VARCHAR(15),
+    @Formato     VARCHAR(5),
+    @RutaArchivo NVARCHAR(500)
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    DECLARE @Responsable INT = COALESCE(
+        (SELECT UsuarioId FROM dbo.Usuario WHERE UsuarioId = @UsuarioId),
+        (SELECT TOP 1 UsuarioId FROM dbo.Usuario WHERE RolId = 3 ORDER BY UsuarioId));
+
+    INSERT INTO dbo.Respaldo (UsuarioId, Tipo, Formato, RutaArchivo)
+    VALUES (@Responsable, @Tipo, @Formato, @RutaArchivo);
+
+    SELECT CAST(SCOPE_IDENTITY() AS INT) AS RespaldoId;
+END
+GO
+
+CREATE OR ALTER PROCEDURE dbo.sp_EjecutarBackup
+    @Tipo VARCHAR(15),
+    @Ruta NVARCHAR(500)
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    DECLARE @Base SYSNAME = DB_NAME();
+
+    IF @Tipo = 'COMPLETO'
+        BACKUP DATABASE @Base TO DISK = @Ruta WITH INIT, CHECKSUM;
+    ELSE IF @Tipo = 'DIFERENCIAL'
+        BACKUP DATABASE @Base TO DISK = @Ruta WITH DIFFERENTIAL, INIT, CHECKSUM;
+    ELSE IF @Tipo = 'LOG'
+        BACKUP LOG @Base TO DISK = @Ruta WITH INIT, CHECKSUM;
+    ELSE
+        THROW 50400, N'El tipo de respaldo no es válido.', 1;
+END
+GO
+
+CREATE OR ALTER PROCEDURE dbo.sp_FinalizarRespaldo
+    @RespaldoId     INT,
+    @Estado         VARCHAR(15),
+    @TamanioBytes   BIGINT = NULL,
+    @ChecksumSha256 CHAR(64) = NULL,
+    @MensajeError   NVARCHAR(1000) = NULL
+AS
+BEGIN
+    SET NOCOUNT ON;
+    SET XACT_ABORT ON;
+
+    BEGIN TRANSACTION;
+
+    UPDATE dbo.Respaldo
+    SET Estado = @Estado,
+        TamanioBytes = @TamanioBytes,
+        ChecksumSha256 = @ChecksumSha256,
+        MensajeError = @MensajeError,
+        FechaFin = SYSUTCDATETIME()
+    WHERE RespaldoId = @RespaldoId;
+
+    IF @Estado = 'OK'
+        INSERT INTO dbo.Auditoria (UsuarioActorId, Accion, EntidadTipo, EntidadId, Detalle)
+        SELECT UsuarioId, 'GENERAR_RESPALDO', 'RESPALDO', RespaldoId, CONCAT(N'Tipo=', Tipo, N'; Formato=', Formato)
+        FROM dbo.Respaldo
+        WHERE RespaldoId = @RespaldoId;
+
+    COMMIT TRANSACTION;
+END
+GO
+
+CREATE OR ALTER PROCEDURE dbo.sp_ListarRespaldos
+    @Pagina        INT,
+    @TamanioPagina INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    SELECT r.RespaldoId, r.UsuarioId, u.NombreUsuario, r.Tipo, r.Formato, r.RutaArchivo, r.TamanioBytes,
+           r.ChecksumSha256, r.Estado, r.FechaInicio, r.FechaFin, r.MensajeError,
+           COUNT(*) OVER () AS Total
+    FROM dbo.Respaldo r
+    JOIN dbo.Usuario u ON u.UsuarioId = r.UsuarioId
+    ORDER BY r.RespaldoId DESC
+    OFFSET (@Pagina - 1) * @TamanioPagina ROWS
+    FETCH NEXT @TamanioPagina ROWS ONLY;
+END
+GO
+
+CREATE OR ALTER PROCEDURE dbo.sp_ReponerRespaldo
+    @RespaldoId     INT,
+    @UsuarioId      INT,
+    @Tipo           VARCHAR(15),
+    @Formato        VARCHAR(5),
+    @RutaArchivo    NVARCHAR(500),
+    @TamanioBytes   BIGINT = NULL,
+    @ChecksumSha256 CHAR(64) = NULL,
+    @Estado         VARCHAR(15),
+    @FechaInicio    DATETIME2(0),
+    @FechaFin       DATETIME2(0) = NULL,
+    @MensajeError   NVARCHAR(1000) = NULL
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    DECLARE @Responsable INT = COALESCE(
+        (SELECT UsuarioId FROM dbo.Usuario WHERE UsuarioId = @UsuarioId),
+        (SELECT TOP 1 UsuarioId FROM dbo.Usuario WHERE RolId = 3 ORDER BY UsuarioId));
+
+    IF EXISTS (SELECT 1 FROM dbo.Respaldo WHERE RespaldoId = @RespaldoId)
+        UPDATE dbo.Respaldo
+        SET UsuarioId = @Responsable, Tipo = @Tipo, Formato = @Formato, RutaArchivo = @RutaArchivo,
+            TamanioBytes = @TamanioBytes, ChecksumSha256 = @ChecksumSha256, Estado = @Estado,
+            FechaInicio = @FechaInicio, FechaFin = @FechaFin, MensajeError = @MensajeError
+        WHERE RespaldoId = @RespaldoId;
+    ELSE
+    BEGIN
+        SET IDENTITY_INSERT dbo.Respaldo ON;
+
+        INSERT INTO dbo.Respaldo (RespaldoId, UsuarioId, Tipo, Formato, RutaArchivo, TamanioBytes, ChecksumSha256,
+                                  Estado, FechaInicio, FechaFin, MensajeError)
+        VALUES (@RespaldoId, @Responsable, @Tipo, @Formato, @RutaArchivo, @TamanioBytes, @ChecksumSha256,
+                @Estado, @FechaInicio, @FechaFin, @MensajeError);
+
+        SET IDENTITY_INSERT dbo.Respaldo OFF;
+    END
+END
+GO
+
+CREATE OR ALTER PROCEDURE dbo.sp_RegistrarRestauracion
+    @UsuarioId  INT,
+    @RespaldoId INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+    SET XACT_ABORT ON;
+
+    DECLARE @Responsable INT = COALESCE(
+        (SELECT UsuarioId FROM dbo.Usuario WHERE UsuarioId = @UsuarioId),
+        (SELECT TOP 1 UsuarioId FROM dbo.Usuario WHERE RolId = 3 ORDER BY UsuarioId));
+
+    BEGIN TRANSACTION;
+
+    UPDATE dbo.Respaldo SET Estado = 'RESTAURADO' WHERE RespaldoId = @RespaldoId;
+
+    INSERT INTO dbo.Auditoria (UsuarioActorId, Accion, EntidadTipo, EntidadId, Detalle)
+    VALUES (@Responsable, 'RESTAURAR_RESPALDO', 'RESPALDO', @RespaldoId, CONCAT(N'SolicitadoPor=', @UsuarioId));
+
+    COMMIT TRANSACTION;
+END
+GO

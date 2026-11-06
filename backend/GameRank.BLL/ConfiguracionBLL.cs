@@ -1,4 +1,5 @@
 using GameRank.DAL;
+using GameRank.Services;
 using GameRank.Services.Rawg;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -6,10 +7,15 @@ namespace GameRank.BLL;
 
 public static class ConfiguracionBLL
 {
-    public static IServiceCollection AgregarCapas(this IServiceCollection servicios, string cadena, ConfiguracionRawg rawg)
+    public static IServiceCollection AgregarCapas(
+        this IServiceCollection servicios,
+        string cadena,
+        ConfiguracionRawg rawg,
+        ConfiguracionRespaldo respaldo)
     {
         servicios.AddSingleton(new AccesoDatos(cadena));
         servicios.AddSingleton(rawg);
+        servicios.AddSingleton(respaldo);
 
         if (rawg.Modo.Equals("Real", StringComparison.OrdinalIgnoreCase))
             servicios.AddSingleton<IRawgCliente>(new RawgHttp(rawg));
@@ -34,6 +40,8 @@ public static class ConfiguracionBLL
         servicios.AddScoped<ModeracionBLL>();
         servicios.AddScoped<AdministracionDAL>();
         servicios.AddScoped<AdministracionBLL>();
+        servicios.AddScoped<RespaldoDAL>();
+        servicios.AddScoped<RespaldoBLL>();
         return servicios;
     }
 }
