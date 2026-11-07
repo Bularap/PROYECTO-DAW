@@ -86,22 +86,23 @@ A los procedimientos descriptos en el modelo de datos se agregaron los siguiente
 
 ### Simulación de grandes volúmenes
 
-El rendimiento se midió con `06_carga_masiva.sql`, sobre 50.007 juegos, 20.006 usuarios, 999.515 calificaciones, 100.006 reseñas y 299.955 registros de biblioteca. Las mediciones se hicieron con la API y SQL Server en la misma máquina, en modo Debug, sin contar la primera ejecución de cada consulta.
+El rendimiento se midió con `06_carga_masiva.sql`, sobre 50.043 juegos, 20.006 usuarios, 999.523 calificaciones, 100.006 reseñas y 299.965 registros de biblioteca. Las mediciones se hicieron con la API y SQL Server en la misma máquina, en modo Debug, sin contar la primera ejecución de cada consulta.
 
 | Consulta | Tiempo |
 |---|---|
-| Catálogo sin filtros | 519 ms |
+| Catálogo sin filtros | 521 ms |
 | Catálogo por puntuación | 234 ms |
-| Búsqueda por título | 70 ms |
-| Búsqueda con texto, géneros, plataforma y puntuación | 93 ms |
-| Catálogo, página 1500 | 349 ms |
-| Ficha técnica | 15 ms |
-| Feed de un juego | 24 ms |
-| Calificar un juego | 15 ms |
-| Perfil de usuario | 4 ms |
-| Moderación, reseñas recientes | 688 ms |
+| Búsqueda por título | 64 ms |
+| Búsqueda con texto, géneros, plataforma y puntuación | 71 ms |
+| Catálogo, página 1500 | 533 ms |
+| Ficha técnica | 2 ms |
+| Feed de un juego | 2 ms |
+| Reseñas recientes de todos los juegos | 685 ms |
+| Calificar un juego | 2 ms |
+| Perfil de usuario | 3 ms |
+| Moderación, reseñas recientes | 642 ms |
 
-La consulta más lenta alcanzó 706 ms, dentro del límite de 2 segundos del requerimiento no funcional.
+La consulta más lenta, las reseñas recientes en la página 500, alcanzó 749 ms, dentro del límite de 2 segundos del requerimiento no funcional.
 
 ## Calidad de software
 
@@ -110,7 +111,7 @@ La consulta más lenta alcanzó 706 ms, dentro del límite de 2 segundos del req
 - **Errores:** todos los errores llegan al cliente con el mismo formato y el código HTTP correspondiente. Los errores no previstos se registran en el servidor sin exponer detalles.
 - **Seguridad:** las contraseñas se guardan con BCrypt, las consultas se ejecutan con parámetros, y los roles se controlan en la API y en los procedimientos almacenados. Las reseñas se sanitizan antes de guardarse.
 - **Trazabilidad:** toda acción de moderación, cambio de rol, respaldo y restauración queda registrada en `Auditoria` con su responsable.
-- **Pruebas:** se verificaron los flujos principales y alternativos de los casos de uso contra la API en ejecución, con 392 casos de prueba automatizados que se encuentran en `backend/pruebas`.
+- **Pruebas:** se verificaron los flujos principales y alternativos de los casos de uso contra la API en ejecución, con 406 casos de prueba automatizados que se encuentran en `backend/pruebas`.
 
 ## Normativa: Ley 25.326
 

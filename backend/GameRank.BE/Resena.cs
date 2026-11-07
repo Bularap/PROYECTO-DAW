@@ -4,6 +4,7 @@ public class Resena
 {
     public int ResenaId { get; set; }
     public int JuegoId { get; set; }
+    public string? Titulo { get; set; }
     public int UsuarioId { get; set; }
     public string NombreUsuario { get; set; } = "";
     public string? AvatarUrl { get; set; }

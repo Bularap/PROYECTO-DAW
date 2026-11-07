@@ -51,9 +51,9 @@ En SSMS: abrir `00_run_all.sql` y activar *Query > SQLCMD Mode*. Para la carga m
 
 Medido a través de la API sobre 50k juegos, 20k usuarios, ~1M calificaciones y 100k reseñas, con SQL Server local y la API en modo Debug, sin contar la primera ejecución de cada consulta:
 
-- Búsqueda con texto, dos géneros, plataforma, puntuación mínima y orden por promedio: **93 ms**.
-- Catálogo sin filtros: **519 ms**.
-- Consulta más lenta (reseñas recientes en moderación): **706 ms**, dentro del límite de 2 s del RNF de rendimiento.
+- Búsqueda con texto, dos géneros, plataforma, puntuación mínima y orden por promedio: **71 ms**.
+- Catálogo sin filtros: **521 ms**.
+- Consulta más lenta (reseñas recientes de todos los juegos, página 500): **749 ms**, dentro del límite de 2 s del RNF de rendimiento.
 
 ## Usuarios de prueba
 

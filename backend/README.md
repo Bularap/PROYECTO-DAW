@@ -73,8 +73,8 @@ python backend/pruebas/correr_todo.py --borrar-base
 | Archivo | Qué cubre | Casos |
 |---|---|---|
 | `prueba_auth.py` | Registro, login, logout, sesiones y bloqueo | 32 |
-| `prueba_catalogo.py` | Búsqueda, filtros, ficha y sincronización, con el mock y con un servidor que imita a Steam | 81 |
-| `prueba_valoracion.py` | Calificaciones, reseñas, reportes, listas, feed y perfil | 102 |
+| `prueba_catalogo.py` | Búsqueda, filtros, ficha y sincronización, con el mock y con un servidor que imita a Steam | 85 |
+| `prueba_valoracion.py` | Calificaciones, reseñas, reportes, listas, feed, reseñas recientes y perfil | 112 |
 | `prueba_admin.py` | Permisos, moderación, roles, auditoría y baja de cuenta | 89 |
 | `prueba_respaldo.py` | Respaldo, exportación CSV y restauración, incluidas las fallas | 88 |
 
@@ -146,7 +146,7 @@ La contraseña debe tener entre 8 y 72 caracteres, con al menos una letra y un n
 
 `generos` y `plataformas` reciben slugs separados por coma. `orden` admite `titulo`, `puntuacion` o `lanzamiento`. Si `parcial` es `true`, Steam no respondió y los resultados son solo los locales.
 
-Cada juego trae su `steamAppId`. Las plataformas son `windows`, `mac` y `linux`, y los géneros vienen en castellano, con slugs como `accion`, `aventura`, `rol` o `indie`.
+Cada juego trae su `steamAppId` y sus `generos`. Las plataformas son `windows`, `mac` y `linux`, y los géneros vienen en castellano, con slugs como `accion`, `aventura`, `rol` o `indie`.
 
 ### Calificaciones, reseñas y listas
 
@@ -155,6 +155,7 @@ Cada juego trae su `steamAppId`. Las plataformas son `windows`, `mac` y `linux`,
 | `PUT /api/juegos/{id}/calificacion` | Sí | `puntuacion` (1 a 5) | `{ promedioCalificacion, cantidadCalificaciones }` |
 | `DELETE /api/juegos/{id}/calificacion` | Sí | - | Igual que el anterior |
 | `GET /api/juegos/{id}/resenas` | No | `pagina`, `tamanioPagina` | `{ total, pagina, tamanioPagina, resenas }` |
+| `GET /api/resenas` | No | `pagina`, `tamanioPagina` | Reseñas recientes de todos los juegos, con la misma forma que el feed |
 | `POST /api/juegos/{id}/resenas` | Sí | `contenido` (10 a 2000 caracteres) | 201 con la reseña |
 | `PUT /api/resenas/{id}` | Sí | `contenido` | 200 con la reseña |
 | `DELETE /api/resenas/{id}` | Sí | - | 204 |

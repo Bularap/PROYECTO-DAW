@@ -10,4 +10,5 @@ public class JuegoResumen
     public DateOnly? FechaLanzamiento { get; set; }
     public decimal? PromedioCalificacion { get; set; }
     public int CantidadCalificaciones { get; set; }
+    public List<ItemCatalogo> Generos { get; set; } = [];
 }

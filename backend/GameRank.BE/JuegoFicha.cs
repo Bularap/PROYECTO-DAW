@@ -10,7 +10,6 @@ public class JuegoFicha : JuegoResumen
     [JsonIgnore]
     public DateTime FechaSincronizacion { get; set; }
 
-    public List<ItemCatalogo> Generos { get; set; } = [];
     public List<ItemCatalogo> Plataformas { get; set; } = [];
     public List<ItemCatalogo> Desarrolladoras { get; set; } = [];
 }

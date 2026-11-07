@@ -105,6 +105,21 @@ for nombre, ruta in [("pagina invalida", "/juegos/1/resenas?pagina=0"), ("tamani
     s, c, _ = pedir("GET", ruta)
     caso("  " + nombre, 400, s, c)
 
+print("=== Resenas recientes")
+s, c, _ = pedir("GET", "/resenas")
+caso("visitante puede leer", 200, s)
+caso("  la mas reciente primero", ("ana_prueba", "The Witcher 3: Wild Hunt", 1), (c["resenas"][0]["nombreUsuario"], c["resenas"][0]["titulo"], c["resenas"][0]["juegoId"]))
+caso("  excluye autores bloqueados", False, "spammer99" in [x["nombreUsuario"] for x in c["resenas"]])
+caso("  total de resenas visibles", 6, c["total"])
+caso("  cada resena con titulo y juego", True, all(x["titulo"] and x["juegoId"] > 0 for x in c["resenas"]))
+s, c, _ = pedir("GET", "/resenas?tamanioPagina=2&pagina=2")
+caso("  paginacion", (200, 2, 2), (s, len(c["resenas"]), c["pagina"]))
+for nombre, ruta in [("pagina invalida", "/resenas?pagina=0"), ("tamanio invalido", "/resenas?tamanioPagina=51")]:
+    s, c, _ = pedir("GET", ruta)
+    caso("  " + nombre, 400, s, c)
+s, c, _ = pedir("GET", "/juegos/1/resenas")
+caso("el feed de un juego tambien trae el titulo", "The Witcher 3: Wild Hunt", c["resenas"][0]["titulo"])
+
 print("=== CU09 editar y eliminar")
 rid = r1["resenaId"]
 NUEVO = "Texto corregido despues de jugar mas."
@@ -130,6 +145,8 @@ s, c, _ = pedir("POST", f"/resenas/{rid}/reportes", {"motivo": "SPAM"}, tb)
 caso("oculta no se reporta", 404, s, c)
 s, c, _ = pedir("GET", "/juegos/1/resenas")
 caso("oculta no aparece en el feed", False, rid in [x["resenaId"] for x in c["resenas"]])
+s, c, _ = pedir("GET", "/resenas")
+caso("oculta no aparece en las recientes", False, rid in [x["resenaId"] for x in c["resenas"]])
 s, c, _ = pedir("GET", "/juegos/1/mi-estado", token=ta)
 caso("oculta no aparece en mi-estado", None, c["resenaId"])
 s, c, _ = pedir("GET", f"/usuarios/{ida}", token=ta)

@@ -59,6 +59,7 @@ const GameRankApi = {
   calificar: (id, puntuacion) => api(`/juegos/${id}/calificacion`, { metodo: 'PUT', cuerpo: { puntuacion } }),
   quitarCalificacion: id => api(`/juegos/${id}/calificacion`, { metodo: 'DELETE' }),
   feed: (id, pagina = 1) => api(`/juegos/${id}/resenas` + consulta({ pagina })),
+  resenasRecientes: (pagina = 1) => api('/resenas' + consulta({ pagina })),
   publicarResena: (id, contenido) => api(`/juegos/${id}/resenas`, { metodo: 'POST', cuerpo: { contenido } }),
   editarResena: (resenaId, contenido) => api(`/resenas/${resenaId}`, { metodo: 'PUT', cuerpo: { contenido } }),
   eliminarResena: resenaId => api(`/resenas/${resenaId}`, { metodo: 'DELETE' }),

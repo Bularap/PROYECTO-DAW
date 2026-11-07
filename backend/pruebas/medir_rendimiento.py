@@ -51,6 +51,8 @@ CASOS = [
     ("GET", "/juegos?pagina=1500", None),
     ("GET", f"/juegos/{juego_top}", None),
     ("GET", f"/juegos/{juego_top}/resenas", None),
+    ("GET", "/resenas", None),
+    ("GET", "/resenas?pagina=500", None),
     ("GET", f"/juegos/{juego_top}/mi-estado", None),
     ("PUT", f"/juegos/{juego_top}/calificacion", {"puntuacion": 4}),
     ("PUT", f"/juegos/{juego_top}/biblioteca", {"estadoListaId": 1}),
