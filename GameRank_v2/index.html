@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="GameRank: descubrí, puntuá y reseñá videojuegos.">
+  <title>Juegos · GameRank</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Source+Sans+3:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <header class="site-header">
+    <div class="container">
+      <a class="logo" href="index.html">Game<span>Rank</span></a>
+      <button class="nav-toggle" aria-expanded="false" aria-controls="nav">Menú</button>
+      <nav class="nav" id="nav" aria-label="Principal">
+        <a href="index.html" aria-current="page">Juegos</a>
+        <a href="reviews.html">Reviews</a>
+        <a href="index.html">Lista</a>
+        <a href="index.html">Diario</a>
+        <a href="index.html">Perfil</a>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero" style="--hero-img: url('imagenes/banner.webp');">
+      <div class="container">
+        <h1>GameRank</h1>
+        <p>Audentes Fortuna Iuvat!</p>
+      </div>
+    </section>
+
+    <div class="container">
+      <form class="toolbar" id="filtros" role="search">
+        <label class="sr-only" for="q">Buscar juego</label>
+        <input type="search" id="q" placeholder="Buscar un juego…">
+        <label class="sr-only" for="genero">Género</label>
+        <select id="genero"><option value="">Todos los géneros</option></select>
+        <label class="sr-only" for="orden">Ordenar por</label>
+        <select id="orden">
+          <option value="-added">Más populares</option>
+          <option value="-rating">Mejor puntuados</option>
+          <option value="-released">Más recientes</option>
+          <option value="name">Nombre (A-Z)</option>
+        </select>
+      </form>
+
+      <h2 id="titulo-lista">Populares</h2>
+      <div id="resultados" class="grid" aria-live="polite"></div>
+      <div id="pager" class="toolbar" style="justify-content:center"></div>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      <p>Datos de videojuegos provistos por <a href="https://rawg.io" target="_blank" rel="noopener">RAWG</a>.</p>
+      <p class="privacy">Aviso de privacidad (Ley 25.326): los datos personales que ingreses se usan solo para gestionar tus reseñas. Podés acceder, rectificar o suprimir tus datos escribiendo a privacidad@gamerank.example. La AAIP es el órgano de control de la ley.</p>
+    </div>
+  </footer>
+
+  <script src="js/demo-data.js"></script>
+  <script src="js/app.js"></script>
+  <script>
+    const res = $('#resultados'), pager = $('#pager');
+    let page = 1;
+
+    async function cargarGeneros() {
+      try {
+        const data = await rawg('genres');
+        $('#genero').append(...data.results.map(g => el('option', { value: g.slug }, g.name)));
+      } catch { /* los filtros siguen funcionando sin géneros */ }
+    }
+
+    function tarjeta(j) {
+      const generos = j.genres.map(g => g.name).slice(0, 2).join(', ') || 'Sin género';
+      const anio = j.released ? j.released.slice(0, 4) : 's/f';
+      return el('article', { class: 'card' },
+        el('img', { src: j.background_image || '', alt: `Portada de ${j.name}`, loading: 'lazy' }),
+        el('div', { class: 'card-body' },
+          el('h3', {}, j.name),
+          el('p', { class: 'meta' }, `${generos} · ${anio}`),
+          el('p', { class: 'meta' }, el('span', { class: 'stars', 'aria-hidden': 'true' }, stars(Math.round(j.rating))), ` ${j.rating.toFixed(1)}/5 (${j.ratings_count})`),
+          el('a', { class: 'btn', href: `reviews.html?id=${j.id}&nombre=${encodeURIComponent(j.name)}` }, 'Escribir reseña')
+        ));
+    }
+
+    async function buscar() {
+      showStatus(res, 'Cargando juegos…');
+      const q = $('#q').value.trim();
+      try {
+        const data = await rawg('games', { page, page_size: 12, search: q, genres: $('#genero').value, ordering: $('#orden').value });
+        $('#titulo-lista').textContent = q ? `Resultados para “${q}”` : 'Populares';
+        if (!data.results.length) return showStatus(res, 'No encontramos juegos con esos filtros. Probá otra búsqueda.');
+        res.replaceChildren(...data.results.map(tarjeta));
+        pager.replaceChildren(
+          el('button', { class: 'btn btn-ghost', disabled: page === 1, onclick: () => { page--; buscar(); } }, 'Anterior'),
+          el('button', { class: 'btn btn-ghost', disabled: !data.next, onclick: () => { page++; buscar(); } }, 'Siguiente')
+        );
+      } catch (e) { showStatus(res, e.message, 'error'); pager.replaceChildren(); }
+    }
+
+    $('#filtros').addEventListener('submit', e => e.preventDefault());
+    $('#q').addEventListener('input', debounce(() => { page = 1; buscar(); }));
+    $('#genero').addEventListener('change', () => { page = 1; buscar(); });
+    $('#orden').addEventListener('change', () => { page = 1; buscar(); });
+    cargarGeneros(); buscar();
+  </script>
+</body>
+</html>
