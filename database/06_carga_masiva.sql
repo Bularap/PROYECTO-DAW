@@ -23,17 +23,16 @@ INTO #Numeros
 FROM sys.all_objects a CROSS JOIN sys.all_objects b CROSS JOIN sys.all_objects c;
 CREATE UNIQUE CLUSTERED INDEX IX_Numeros ON #Numeros (n);
 
-/* ---- Juegos (RawgId >= 10.000.000 para no chocar con ids reales) ---- */
+/* ---- Juegos (SteamAppId >= 100.000.000 para no chocar con ids reales) ---- */
 DECLARE @PrimerJuego INT = ISNULL((SELECT MAX(JuegoId) FROM dbo.Juego), 0) + 1;
 
-INSERT INTO dbo.Juego (RawgId, Titulo, Slug, Sinopsis, FechaLanzamiento, PortadaUrl, RatingRawg, Metacritic)
-SELECT 10000000 + n,
+INSERT INTO dbo.Juego (SteamAppId, Titulo, Slug, Sinopsis, FechaLanzamiento, PortadaUrl, Metacritic)
+SELECT 100000000 + n,
        CONCAT(N'Juego Sintetico ', n),
        CONCAT(N'juego-sintetico-', n),
        N'Registro generado para pruebas de volumen.',
        DATEADD(DAY, -(ABS(CHECKSUM(NEWID())) % 9000), CAST(GETDATE() AS DATE)),
        NULL,
-       CAST((ABS(CHECKSUM(NEWID())) % 500) / 100.0 AS DECIMAL(3,2)),
        CASE WHEN n % 3 = 0 THEN NULL ELSE 40 + ABS(CHECKSUM(NEWID())) % 60 END
 FROM #Numeros WHERE n <= @CantJuegos;
 

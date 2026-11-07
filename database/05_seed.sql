@@ -1,4 +1,4 @@
-/* =============================================================================
+﻿/* =============================================================================
    GAME RANK - Script 05: Datos iniciales y de prueba
    ============================================================================= */
 
@@ -20,76 +20,68 @@ INSERT INTO dbo.EstadoLista (EstadoListaId, Nombre) VALUES
     (3, N'Abandonado');
 GO
 
-/* ------------------- Catalogo de ejemplo (ids reales de RAWG) ------------------- */
+/* ------------------- Catalogo de ejemplo (ids reales de Steam) ------------------- */
 
 SET IDENTITY_INSERT dbo.Genero ON;
-INSERT INTO dbo.Genero (GeneroId, RawgId, Nombre, Slug) VALUES
-    (1,  4, N'Action',    N'action'),
-    (2,  3, N'Adventure', N'adventure'),
-    (3,  5, N'RPG',       N'role-playing-games-rpg'),
-    (4,  2, N'Shooter',   N'shooter'),
-    (5, 51, N'Indie',     N'indie'),
-    (6,  7, N'Puzzle',    N'puzzle'),
-    (7, 10, N'Strategy',  N'strategy'),
-    (8, 83, N'Platformer',N'platformer');
+INSERT INTO dbo.Genero (GeneroId, SteamId, Nombre, Slug) VALUES
+    (1,  1, N'Acción',      N'accion'),
+    (2, 25, N'Aventura',    N'aventura'),
+    (3,  3, N'Rol',         N'rol'),
+    (4,  2, N'Estrategia',  N'estrategia'),
+    (5, 23, N'Indie',       N'indie'),
+    (6, 28, N'Simuladores', N'simuladores'),
+    (7,  4, N'Casual',      N'casual'),
+    (8,  9, N'Carreras',    N'carreras'),
+    (9, 18, N'Deportes',    N'deportes');
 SET IDENTITY_INSERT dbo.Genero OFF;
 
 SET IDENTITY_INSERT dbo.Plataforma ON;
-INSERT INTO dbo.Plataforma (PlataformaId, RawgId, Nombre, Slug) VALUES
-    (1,   4, N'PC',              N'pc'),
-    (2, 187, N'PlayStation 5',   N'playstation5'),
-    (3,  18, N'PlayStation 4',   N'playstation4'),
-    (4, 186, N'Xbox Series S/X', N'xbox-series-x'),
-    (5,   1, N'Xbox One',        N'xbox-one'),
-    (6,   7, N'Nintendo Switch', N'nintendo-switch');
+INSERT INTO dbo.Plataforma (PlataformaId, Nombre, Slug) VALUES
+    (1, N'Windows', N'windows'),
+    (2, N'macOS',   N'mac'),
+    (3, N'Linux',   N'linux');
 SET IDENTITY_INSERT dbo.Plataforma OFF;
 
 SET IDENTITY_INSERT dbo.Desarrolladora ON;
-INSERT INTO dbo.Desarrolladora (DesarrolladoraId, RawgId, Nombre, Slug) VALUES
-    (1, 9023,  N'CD PROJEKT RED',   N'cd-projekt-red'),
-    (2, 3524,  N'Rockstar North',   N'rockstar-north'),
-    (3, 1612,  N'Valve Software',   N'valve-software'),
-    (4, 7414,  N'FromSoftware',     N'fromsoftware'),
-    (5, 4004,  N'Supergiant Games', N'supergiant-games'),
-    (6, 6763,  N'Team Cherry',      N'team-cherry');
+INSERT INTO dbo.Desarrolladora (DesarrolladoraId, Nombre, Slug) VALUES
+    (1, N'CD PROJEKT RED',     N'cd-projekt-red'),
+    (2, N'Rockstar North',     N'rockstar-north'),
+    (3, N'Valve',              N'valve'),
+    (4, N'FromSoftware, Inc.', N'fromsoftware-inc'),
+    (5, N'Supergiant Games',   N'supergiant-games'),
+    (6, N'Team Cherry',        N'team-cherry');
 SET IDENTITY_INSERT dbo.Desarrolladora OFF;
 
 SET IDENTITY_INSERT dbo.Juego ON;
-INSERT INTO dbo.Juego (JuegoId, RawgId, Titulo, Slug, Sinopsis, FechaLanzamiento, PortadaUrl, RatingRawg, Metacritic) VALUES
-    (1,   3328, N'The Witcher 3: Wild Hunt',     N'the-witcher-3-wild-hunt',
+INSERT INTO dbo.Juego (JuegoId, SteamAppId, Titulo, Slug, Sinopsis, FechaLanzamiento, PortadaUrl, Metacritic) VALUES
+    (1, 292030, N'The Witcher 3: Wild Hunt', N'the-witcher-3-wild-hunt-292030',
         N'RPG de mundo abierto protagonizado por Geralt de Rivia.', '2015-05-18',
-        N'https://media.rawg.io/media/games/618/618c2031a07bbff6b4f611f10b6bcdbc.jpg', 4.65, 92),
-    (2,   3498, N'Grand Theft Auto V',           N'grand-theft-auto-v',
-        N'Accion en mundo abierto en la ciudad de Los Santos.', '2013-09-17',
-        N'https://media.rawg.io/media/games/20a/20aa03a10cda45239fe22d035c0ebe64.jpg', 4.47, 92),
-    (3,   4200, N'Portal 2',                     N'portal-2',
+        N'https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/292030/4b5b1ba5061b8a992cc69ac58b4245434edb4296/header.jpg', 93),
+    (2, 271590, N'Grand Theft Auto V', N'grand-theft-auto-v-271590',
+        N'Acción en mundo abierto en la ciudad de Los Santos.', '2015-04-13',
+        N'https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/271590/header.jpg', 96),
+    (3, 620, N'Portal 2', N'portal-2-620',
         N'Puzzles en primera persona con el arma de portales.', '2011-04-18',
-        N'https://media.rawg.io/media/games/2ba/2bac0e87cf45e5b508f227d281c9252a.jpg', 4.61, 95),
-    (4,  58175, N'God of War',                   N'god-of-war-2',
-        NULL, '2018-04-20', NULL, 4.56, 94),                             -- datos parciales (CU06 4b)
-    (5, 326243, N'Elden Ring',                   N'elden-ring',
-        N'Action RPG de FromSoftware en las Tierras Intermedias.', '2022-02-25',
-        N'https://media.rawg.io/media/games/5ec/5ecac5cb026ec26a56efcc546364e348.jpg', 4.39, 94),
-    (6,  274755, N'Hades',                       N'hades-2',
-        N'Roguelike: escapa del inframundo como Zagreo.', '2020-09-17',
-        N'https://media.rawg.io/media/games/1f4/1f47a270b8f241e4676b14d39ec620f7.jpg', 4.42, 93),
-    (7,   9767, N'Hollow Knight',                N'hollow-knight',
+        N'https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/620/faffc0f560786e2f05104a8d2fac837c6969bf13/header.jpg', 95),
+    (4, 1593500, N'God of War', N'god-of-war-1593500',
+        NULL, '2022-01-14', NULL, 93),
+    (5, 1245620, N'Elden Ring', N'elden-ring-1245620',
+        N'Action RPG de FromSoftware en las Tierras Intermedias.', '2022-02-24',
+        N'https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1245620/header.jpg', 94),
+    (6, 1145360, N'Hades', N'hades-1145360',
+        N'Roguelike: escapá del inframundo como Zagreo.', '2020-09-17',
+        N'https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1145360/header.jpg', 93),
+    (7, 367520, N'Hollow Knight', N'hollow-knight-367520',
         N'Metroidvania en el reino de Hallownest.', '2017-02-24',
-        N'https://media.rawg.io/media/games/4cf/4cfc6b7f1850590a4634b08bfab308ab.jpg', 4.40, 90);
+        N'https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/367520/3c3489495136b26b34f8a9543c7f5645b99d388c/header.jpg', 87);
 SET IDENTITY_INSERT dbo.Juego OFF;
 
 INSERT INTO dbo.JuegoGenero (JuegoId, GeneroId) VALUES
-    (1,1),(1,2),(1,3), (2,1),(2,2), (3,6),(3,4), (4,1),(4,2),
-    (5,1),(5,3), (6,1),(6,5),(6,3), (7,1),(7,5),(7,8);
+    (1,3), (2,1),(2,2), (3,1),(3,2), (4,1),(4,2),(4,3),
+    (5,1),(5,3), (6,1),(6,5),(6,3), (7,1),(7,2),(7,5);
 
 INSERT INTO dbo.JuegoPlataforma (JuegoId, PlataformaId) VALUES
-    (1,1),(1,2),(1,3),(1,4),(1,5),(1,6),
-    (2,1),(2,2),(2,3),(2,4),(2,5),
-    (3,1),
-    (4,1),(4,3),
-    (5,1),(5,2),(5,3),(5,4),(5,5),
-    (6,1),(6,2),(6,3),(6,4),(6,5),(6,6),
-    (7,1),(7,3),(7,5),(7,6);
+    (1,1), (2,1), (3,1),(3,3), (4,1), (5,1), (6,1),(6,2), (7,1),(7,2),(7,3);
 
 INSERT INTO dbo.JuegoDesarrolladora (JuegoId, DesarrolladoraId) VALUES
     (1,1),(2,2),(3,3),(5,4),(6,5),(7,6);
@@ -142,5 +134,5 @@ INSERT INTO dbo.Auditoria (UsuarioActorId, Accion, EntidadTipo, EntidadId, Motiv
     (2, 'BLOQUEAR_USUARIO', 'USUARIO', 6, N'Publicacion reiterada de spam');
 
 INSERT INTO dbo.SincronizacionApi (Origen, ParametrosConsulta, FechaFin, Estado, RegistrosInsertados, RegistrosActualizados) VALUES
-    ('PROGRAMADA', N'page=1&page_size=40&ordering=-rating', SYSUTCDATETIME(), 'OK', 7, 0);
+    ('PROGRAMADA', N'origen=destacados', SYSUTCDATETIME(), 'OK', 7, 0);
 GO

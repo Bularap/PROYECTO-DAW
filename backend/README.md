@@ -7,7 +7,7 @@ API REST de GameRank en ASP.NET Core (.NET 10) sobre SQL Server.
 | Proyecto | Responsabilidad | Depende de |
 |---|---|---|
 | `GameRank.BE` | Entidades | - |
-| `GameRank.Services` | Excepciones, hash, tokens, CSV, archivos y cliente de RAWG | - |
+| `GameRank.Services` | Excepciones, hash, tokens, CSV, archivos y cliente de Steam | - |
 | `GameRank.DAL` | Acceso a datos con ADO.NET y procedimientos almacenados | BE, Services |
 | `GameRank.BLL` | Reglas de negocio | BE, DAL, Services |
 | `GameRank.API` | Controladores, autenticación y traducción de errores a HTTP | BE, BLL, Services |
@@ -32,7 +32,7 @@ dotnet run --project backend/GameRank.API
 
 Volver a correr `00_run_all.sql` borra y recrea la base.
 
-Al iniciar, la API sincroniza el catálogo. Con el mock de RAWG pasa de 7 a 26 juegos.
+Al iniciar, la API sincroniza el catálogo con los juegos destacados de Steam. En modo `Mock` usa los 21 juegos de `GameRank.Services/Steam/steam-mock.json`.
 
 ## Configuración
 
@@ -41,15 +41,16 @@ Los valores por defecto están en `GameRank.API/appsettings.json`. Para cambiarl
 | Clave | Por defecto | Para qué sirve |
 |---|---|---|
 | `ConnectionStrings:GameRank` | Instancia local `.` | Conexión a la base |
-| `Rawg:Modo` | `Mock` | `Mock` usa datos locales, `Real` llama a RAWG |
-| `Rawg:ApiKey` | Vacío | Clave de RAWG, solo para modo `Real` |
-| `Rawg:IntervaloHoras` | `24` | Frecuencia de la sincronización; `0` la desactiva |
-| `Rawg:PaginasPorCiclo` | `3` | Páginas por sincronización |
-| `Rawg:TamanioLote` | `40` | Juegos por página |
-| `Rawg:MaxReintentos` | `3` | Reintentos ante un error 429 |
-| `Rawg:TimeoutSegundos` | `1.5` | Tiempo máximo de espera a RAWG |
+| `Steam:Modo` | `Real` | `Real` consulta la tienda de Steam; `Mock` usa datos locales, para trabajar sin conexión o si Steam falla |
+| `Steam:TiendaUrl` | Tienda de Steam | Dirección de la API de la tienda |
+| `Steam:IntervaloHoras` | `24` | Frecuencia de la sincronización; `0` la desactiva |
+| `Steam:MaxJuegosPorCiclo` | `40` | Juegos destacados que se traen en cada sincronización |
+| `Steam:MaxReintentos` | `3` | Reintentos ante un error 429 en la sincronización programada |
+| `Steam:TimeoutSegundos` | `1.5` | Tiempo máximo de espera a Steam. En la búsqueda es el tiempo total |
 | `Respaldo:Directorio` | Vacío | Carpeta de respaldos. Si está vacía, usa la subcarpeta `GameRank` de la carpeta de backups de SQL Server |
 | `Cors:Origenes` | Puerto 5500 local | Orígenes autorizados para el front |
+
+Steam no requiere clave: se usan los endpoints públicos de la tienda (`appdetails`, `storesearch` y `featuredcategories`), que no tienen documentación oficial.
 
 Ejemplo para quien usa LocalDB:
 
@@ -58,6 +59,48 @@ dotnet user-secrets set "ConnectionStrings:GameRank" "Server=(localdb)\MSSQLLoca
 ```
 
 Para que la API pueda calcular el checksum y descargar respaldos, necesita permiso de lectura sobre la carpeta de respaldos. SQL Server necesita permiso de escritura sobre esa misma carpeta.
+
+## Pruebas
+
+Las pruebas están en `backend/pruebas` y requieren Python 3 y `sqlcmd`. Ejercitan la API en ejecución contra una base real.
+
+**Borran y recrean la base `GameRank`**, por eso piden un parámetro de confirmación. Al terminar la dejan con los datos del seed. La API no debe estar corriendo.
+
+```bash
+python backend/pruebas/correr_todo.py --borrar-base
+```
+
+| Archivo | Qué cubre | Casos |
+|---|---|---|
+| `prueba_auth.py` | Registro, login, logout, sesiones y bloqueo | 32 |
+| `prueba_catalogo.py` | Búsqueda, filtros, ficha y sincronización, con el mock y con un servidor que imita a Steam | 81 |
+| `prueba_valoracion.py` | Calificaciones, reseñas, reportes, listas, feed y perfil | 102 |
+| `prueba_admin.py` | Permisos, moderación, roles, auditoría y baja de cuenta | 89 |
+| `prueba_respaldo.py` | Respaldo, exportación CSV y restauración, incluidas las fallas | 88 |
+
+Para otra instancia de SQL Server, definir la variable `GAMERANK_PRUEBAS_SERVIDOR`, por ejemplo con `(localdb)\MSSQLLocalDB`.
+
+`prueba_respaldo.py` crea la subcarpeta `GameRank` en la carpeta de backups de SQL Server y la borra al terminar. Si esa subcarpeta ya existe, no se ejecuta, para no borrar respaldos reales.
+
+Para comprobar la conexión con Steam real (hace unos 40 pedidos a la tienda y también recrea la base):
+
+```bash
+python backend/pruebas/probar_steam_real.py --borrar-base
+```
+
+Para repetir las mediciones de rendimiento, primero cargar el volumen y después correr los dos scripts:
+
+```bash
+sqlcmd -S "." -E -b -i database/06_carga_masiva.sql
+```
+
+```bash
+python backend/pruebas/medir_rendimiento.py
+```
+
+```bash
+python backend/pruebas/medir_respaldo.py
+```
 
 ## Primer Super Administrador
 
@@ -101,7 +144,9 @@ La contraseña debe tener entre 8 y 72 caracteres, con al menos una letra y un n
 | `GET /api/plataformas` | No | - | Lista |
 | `GET /api/estados-lista` | No | - | Lista |
 
-`generos` y `plataformas` reciben slugs separados por coma. `orden` admite `titulo`, `puntuacion` o `lanzamiento`. Si `parcial` es `true`, RAWG no respondió y los resultados son solo los locales.
+`generos` y `plataformas` reciben slugs separados por coma. `orden` admite `titulo`, `puntuacion` o `lanzamiento`. Si `parcial` es `true`, Steam no respondió y los resultados son solo los locales.
+
+Cada juego trae su `steamAppId`. Las plataformas son `windows`, `mac` y `linux`, y los géneros vienen en castellano, con slugs como `accion`, `aventura`, `rol` o `indie`.
 
 ### Calificaciones, reseñas y listas
 

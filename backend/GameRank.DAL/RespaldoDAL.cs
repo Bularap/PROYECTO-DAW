@@ -11,10 +11,10 @@ public class RespaldoDAL
 
     private static readonly Dictionary<string, string> TablasExportables = new()
     {
-        ["Juego"] = "SELECT JuegoId, RawgId, Titulo, Slug, Sinopsis, FechaLanzamiento, PortadaUrl, RatingRawg, Metacritic FROM dbo.Juego",
-        ["Genero"] = "SELECT GeneroId, RawgId, Nombre, Slug FROM dbo.Genero",
-        ["Plataforma"] = "SELECT PlataformaId, RawgId, Nombre, Slug FROM dbo.Plataforma",
-        ["Desarrolladora"] = "SELECT DesarrolladoraId, RawgId, Nombre, Slug FROM dbo.Desarrolladora",
+        ["Juego"] = "SELECT JuegoId, SteamAppId, Titulo, Slug, Sinopsis, FechaLanzamiento, PortadaUrl, Metacritic FROM dbo.Juego",
+        ["Genero"] = "SELECT GeneroId, SteamId, Nombre, Slug FROM dbo.Genero",
+        ["Plataforma"] = "SELECT PlataformaId, Nombre, Slug FROM dbo.Plataforma",
+        ["Desarrolladora"] = "SELECT DesarrolladoraId, Nombre, Slug FROM dbo.Desarrolladora",
         ["JuegoGenero"] = "SELECT JuegoId, GeneroId FROM dbo.JuegoGenero",
         ["JuegoPlataforma"] = "SELECT JuegoId, PlataformaId FROM dbo.JuegoPlataforma",
         ["JuegoDesarrolladora"] = "SELECT JuegoId, DesarrolladoraId FROM dbo.JuegoDesarrolladora",

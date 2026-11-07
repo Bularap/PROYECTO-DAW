@@ -11,7 +11,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <EmbeddedResource Include="Rawg/rawg-mock.json" />
+    <EmbeddedResource Include="Steam/steam-mock.json" />
   </ItemGroup>
 
 </Project>

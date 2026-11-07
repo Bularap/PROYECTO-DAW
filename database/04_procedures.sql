@@ -131,7 +131,7 @@ BEGIN
     IF @TamanioPagina NOT BETWEEN 1 AND 100 SET @TamanioPagina = 24;
 
     WITH Base AS (
-        SELECT j.JuegoId, j.RawgId, j.Titulo, j.Slug, j.PortadaUrl, j.FechaLanzamiento,
+        SELECT j.JuegoId, j.SteamAppId, j.Titulo, j.Slug, j.PortadaUrl, j.FechaLanzamiento,
                m.PromedioCalificacion, m.CantidadCalificaciones
         FROM dbo.Juego j
         OUTER APPLY (
@@ -154,7 +154,7 @@ BEGIN
                 WHERE jp.JuegoId = j.JuegoId
                   AND p.Slug IN (SELECT LTRIM(RTRIM(value)) FROM STRING_SPLIT(@Plataformas, ','))))
     )
-    SELECT JuegoId, RawgId, Titulo, Slug, PortadaUrl, FechaLanzamiento,
+    SELECT JuegoId, SteamAppId, Titulo, Slug, PortadaUrl, FechaLanzamiento,
            PromedioCalificacion, CantidadCalificaciones,
            COUNT(*) OVER () AS TotalResultados
     FROM Base
@@ -180,8 +180,8 @@ BEGIN
     IF NOT EXISTS (SELECT 1 FROM dbo.Juego WHERE JuegoId = @JuegoId)
         THROW 50404, N'Juego no encontrado.', 1;
 
-    SELECT j.JuegoId, j.RawgId, j.Titulo, j.Slug, j.Sinopsis, j.FechaLanzamiento,
-           j.PortadaUrl, j.RatingRawg, j.Metacritic, j.FechaSincronizacion,
+    SELECT j.JuegoId, j.SteamAppId, j.Titulo, j.Slug, j.Sinopsis, j.FechaLanzamiento,
+           j.PortadaUrl, j.Metacritic, j.FechaSincronizacion,
            m.PromedioCalificacion, m.CantidadCalificaciones
     FROM dbo.Juego j
     JOIN dbo.vw_JuegoMetricas m ON m.JuegoId = j.JuegoId
@@ -206,13 +206,13 @@ GO
 
 /* -----------------------------------------------------------------------------
    M03 - Integracion API Externa (CU15)
-   Recibe el JSON de detalle de un juego tal como lo devuelve la RAWG API
-   (GET /api/games/{id}) y lo normaliza en Juego, Genero, Plataforma y Desarrolladora.
+   Recibe el JSON normalizado de un juego de Steam y lo guarda en Juego, Genero,
+   Plataforma y Desarrolladora. Las relaciones se reemplazan solo si vienen en el JSON.
    ----------------------------------------------------------------------------- */
 
 CREATE OR ALTER PROCEDURE dbo.sp_UpsertJuegoDesdeApi
     @Json      NVARCHAR(MAX),
-    @Resultado CHAR(1) OUTPUT          -- I = insertado, U = actualizado
+    @Resultado CHAR(1) OUTPUT
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -221,24 +221,23 @@ BEGIN
     IF ISJSON(@Json) <> 1
         THROW 50400, N'El JSON recibido no es válido.', 1;
 
-    DECLARE @RawgId INT, @Titulo NVARCHAR(255), @Slug NVARCHAR(255), @Sinopsis NVARCHAR(MAX),
-            @Lanzamiento DATE, @Portada NVARCHAR(500), @Rating DECIMAL(3,2), @Metacritic TINYINT;
+    DECLARE @SteamAppId INT, @Titulo NVARCHAR(255), @Slug NVARCHAR(255), @Sinopsis NVARCHAR(MAX),
+            @Lanzamiento DATE, @Portada NVARCHAR(500), @Metacritic TINYINT;
 
-    SELECT @RawgId = RawgId, @Titulo = Titulo, @Slug = Slug, @Sinopsis = Sinopsis,
-           @Lanzamiento = Lanzamiento, @Portada = Portada, @Rating = Rating, @Metacritic = Metacritic
+    SELECT @SteamAppId = SteamAppId, @Titulo = Titulo, @Slug = Slug, @Sinopsis = Sinopsis,
+           @Lanzamiento = Lanzamiento, @Portada = Portada, @Metacritic = Metacritic
     FROM OPENJSON(@Json) WITH (
-        RawgId      INT            '$.id',
-        Titulo      NVARCHAR(255)  '$.name',
+        SteamAppId  INT            '$.steamAppId',
+        Titulo      NVARCHAR(255)  '$.nombre',
         Slug        NVARCHAR(255)  '$.slug',
-        Sinopsis    NVARCHAR(MAX)  '$.description_raw',
-        Lanzamiento DATE           '$.released',
-        Portada     NVARCHAR(500)  '$.background_image',
-        Rating      DECIMAL(3,2)   '$.rating',
+        Sinopsis    NVARCHAR(MAX)  '$.sinopsis',
+        Lanzamiento DATE           '$.lanzamiento',
+        Portada     NVARCHAR(500)  '$.portada',
         Metacritic  TINYINT        '$.metacritic'
     );
 
-    IF @RawgId IS NULL OR @Titulo IS NULL OR @Slug IS NULL
-        THROW 50400, N'El JSON no contiene id, name o slug.', 1;
+    IF @SteamAppId IS NULL OR @Titulo IS NULL OR @Slug IS NULL
+        THROW 50400, N'El JSON no contiene steamAppId, nombre o slug.', 1;
 
     DECLARE @JuegoId INT;
 
@@ -250,64 +249,67 @@ BEGIN
         Sinopsis = COALESCE(@Sinopsis, Sinopsis),
         FechaLanzamiento = COALESCE(@Lanzamiento, FechaLanzamiento),
         PortadaUrl = COALESCE(@Portada, PortadaUrl),
-        RatingRawg = @Rating, Metacritic = @Metacritic,
+        Metacritic = COALESCE(@Metacritic, Metacritic),
         FechaSincronizacion = SYSUTCDATETIME()
-    WHERE RawgId = @RawgId;
+    WHERE SteamAppId = @SteamAppId;
 
     IF @JuegoId IS NULL
     BEGIN
-        INSERT INTO dbo.Juego (RawgId, Titulo, Slug, Sinopsis, FechaLanzamiento, PortadaUrl, RatingRawg, Metacritic)
-        VALUES (@RawgId, @Titulo, @Slug, @Sinopsis, @Lanzamiento, @Portada, @Rating, @Metacritic);
+        INSERT INTO dbo.Juego (SteamAppId, Titulo, Slug, Sinopsis, FechaLanzamiento, PortadaUrl, Metacritic)
+        VALUES (@SteamAppId, @Titulo, @Slug, @Sinopsis, @Lanzamiento, @Portada, @Metacritic);
         SET @JuegoId = SCOPE_IDENTITY();
         SET @Resultado = 'I';
     END
     ELSE
         SET @Resultado = 'U';
 
-    -- Generos
-    MERGE dbo.Genero AS t
-    USING (SELECT DISTINCT id, name, slug
-           FROM OPENJSON(@Json, '$.genres') WITH (id INT, name NVARCHAR(60), slug NVARCHAR(60))) AS s
-    ON t.RawgId = s.id
-    WHEN MATCHED AND t.Nombre <> s.name THEN UPDATE SET Nombre = s.name
-    WHEN NOT MATCHED THEN INSERT (RawgId, Nombre, Slug) VALUES (s.id, s.name, s.slug);
-
-    DELETE FROM dbo.JuegoGenero WHERE JuegoId = @JuegoId;
-    INSERT INTO dbo.JuegoGenero (JuegoId, GeneroId)
-    SELECT DISTINCT @JuegoId, g.GeneroId
-    FROM OPENJSON(@Json, '$.genres') WITH (id INT) s
-    JOIN dbo.Genero g ON g.RawgId = s.id;
-
-    -- Plataformas (RAWG las anida en platforms[].platform)
-    MERGE dbo.Plataforma AS t
-    USING (SELECT DISTINCT id, name, slug
-           FROM OPENJSON(@Json, '$.platforms') WITH (
-                id INT '$.platform.id', name NVARCHAR(60) '$.platform.name', slug NVARCHAR(60) '$.platform.slug')) AS s
-    ON t.RawgId = s.id
-    WHEN MATCHED AND t.Nombre <> s.name THEN UPDATE SET Nombre = s.name
-    WHEN NOT MATCHED THEN INSERT (RawgId, Nombre, Slug) VALUES (s.id, s.name, s.slug);
-
-    DELETE FROM dbo.JuegoPlataforma WHERE JuegoId = @JuegoId;
-    INSERT INTO dbo.JuegoPlataforma (JuegoId, PlataformaId)
-    SELECT DISTINCT @JuegoId, p.PlataformaId
-    FROM OPENJSON(@Json, '$.platforms') WITH (id INT '$.platform.id') s
-    JOIN dbo.Plataforma p ON p.RawgId = s.id;
-
-    -- Desarrolladoras (solo vienen en el endpoint de detalle)
-    MERGE dbo.Desarrolladora AS t
-    USING (SELECT DISTINCT id, name, slug
-           FROM OPENJSON(@Json, '$.developers') WITH (id INT, name NVARCHAR(150), slug NVARCHAR(150))) AS s
-    ON t.RawgId = s.id
-    WHEN MATCHED AND t.Nombre <> s.name THEN UPDATE SET Nombre = s.name
-    WHEN NOT MATCHED THEN INSERT (RawgId, Nombre, Slug) VALUES (s.id, s.name, s.slug);
-
-    IF JSON_QUERY(@Json, '$.developers') IS NOT NULL
+    IF JSON_QUERY(@Json, '$.generos') IS NOT NULL
     BEGIN
+        MERGE dbo.Genero AS t
+        USING (SELECT id, MAX(nombre) AS nombre, MAX(slug) AS slug
+               FROM OPENJSON(@Json, '$.generos') WITH (id INT, nombre NVARCHAR(60), slug NVARCHAR(60))
+               GROUP BY id) AS s
+        ON t.SteamId = s.id
+        WHEN MATCHED AND t.Nombre <> s.nombre THEN UPDATE SET Nombre = s.nombre
+        WHEN NOT MATCHED THEN INSERT (SteamId, Nombre, Slug) VALUES (s.id, s.nombre, s.slug);
+
+        DELETE FROM dbo.JuegoGenero WHERE JuegoId = @JuegoId;
+        INSERT INTO dbo.JuegoGenero (JuegoId, GeneroId)
+        SELECT DISTINCT @JuegoId, g.GeneroId
+        FROM OPENJSON(@Json, '$.generos') WITH (id INT) s
+        JOIN dbo.Genero g ON g.SteamId = s.id;
+    END
+
+    IF JSON_QUERY(@Json, '$.plataformas') IS NOT NULL
+    BEGIN
+        MERGE dbo.Plataforma AS t
+        USING (SELECT slug, MAX(nombre) AS nombre
+               FROM OPENJSON(@Json, '$.plataformas') WITH (nombre NVARCHAR(60), slug NVARCHAR(60))
+               GROUP BY slug) AS s
+        ON t.Slug = s.slug
+        WHEN NOT MATCHED THEN INSERT (Nombre, Slug) VALUES (s.nombre, s.slug);
+
+        DELETE FROM dbo.JuegoPlataforma WHERE JuegoId = @JuegoId;
+        INSERT INTO dbo.JuegoPlataforma (JuegoId, PlataformaId)
+        SELECT DISTINCT @JuegoId, p.PlataformaId
+        FROM OPENJSON(@Json, '$.plataformas') WITH (slug NVARCHAR(60)) s
+        JOIN dbo.Plataforma p ON p.Slug = s.slug;
+    END
+
+    IF JSON_QUERY(@Json, '$.desarrolladoras') IS NOT NULL
+    BEGIN
+        MERGE dbo.Desarrolladora AS t
+        USING (SELECT slug, MAX(nombre) AS nombre
+               FROM OPENJSON(@Json, '$.desarrolladoras') WITH (nombre NVARCHAR(150), slug NVARCHAR(150))
+               GROUP BY slug) AS s
+        ON t.Slug = s.slug
+        WHEN NOT MATCHED THEN INSERT (Nombre, Slug) VALUES (s.nombre, s.slug);
+
         DELETE FROM dbo.JuegoDesarrolladora WHERE JuegoId = @JuegoId;
         INSERT INTO dbo.JuegoDesarrolladora (JuegoId, DesarrolladoraId)
         SELECT DISTINCT @JuegoId, d.DesarrolladoraId
-        FROM OPENJSON(@Json, '$.developers') WITH (id INT) s
-        JOIN dbo.Desarrolladora d ON d.RawgId = s.id;
+        FROM OPENJSON(@Json, '$.desarrolladoras') WITH (slug NVARCHAR(150)) s
+        JOIN dbo.Desarrolladora d ON d.Slug = s.slug;
     END
 
     COMMIT TRANSACTION;

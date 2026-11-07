@@ -1,8 +1,8 @@
-namespace GameRank.Services.Rawg;
+namespace GameRank.Services.Steam;
 
-public class RawgLote
+public class LoteSteam
 {
     public List<string> Juegos { get; set; } = [];
-    public bool HayMas { get; set; }
     public int Reintentos { get; set; }
+    public int Fallidos { get; set; }
 }

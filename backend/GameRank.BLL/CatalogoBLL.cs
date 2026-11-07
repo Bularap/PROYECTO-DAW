@@ -1,25 +1,24 @@
 using GameRank.BE;
 using GameRank.DAL;
 using GameRank.Services;
-using GameRank.Services.Rawg;
+using GameRank.Services.Steam;
 
 namespace GameRank.BLL;
 
 public class CatalogoBLL
 {
     private const int DiasVigencia = 30;
-    private const int TamanioLoteBusqueda = 20;
     private static readonly string[] OrdenesValidos = ["TITULO", "PUNTUACION", "LANZAMIENTO"];
 
     private readonly CatalogoDAL _dal;
     private readonly SincronizacionBLL _sincronizacion;
-    private readonly IRawgCliente _rawg;
+    private readonly ISteamCliente _steam;
 
-    public CatalogoBLL(CatalogoDAL dal, SincronizacionBLL sincronizacion, IRawgCliente rawg)
+    public CatalogoBLL(CatalogoDAL dal, SincronizacionBLL sincronizacion, ISteamCliente steam)
     {
         _dal = dal;
         _sincronizacion = sincronizacion;
-        _rawg = rawg;
+        _steam = steam;
     }
 
     public async Task<ResultadoCatalogo> Buscar(FiltroCatalogo filtro)
@@ -30,7 +29,7 @@ public class CatalogoBLL
         if (resultado.Total > 0 || !EsBusquedaSoloPorTexto(filtro))
             return resultado;
 
-        var apiDisponible = await _sincronizacion.Sincronizar(SincronizacionBLL.OrigenBusqueda, filtro.Texto, 1, TamanioLoteBusqueda, 0);
+        var apiDisponible = await _sincronizacion.Sincronizar(SincronizacionBLL.OrigenBusqueda, filtro.Texto!, 0);
 
         resultado = await _dal.Buscar(filtro);
         resultado.Parcial = !apiDisponible;
@@ -47,14 +46,14 @@ public class CatalogoBLL
 
         try
         {
-            var json = await _rawg.ObtenerJuego(ficha.RawgId);
+            var json = await _steam.ObtenerJuego(ficha.SteamAppId);
             if (json == null)
                 return ficha;
 
             await _dal.GuardarDesdeApi(json);
             return await _dal.ObtenerFicha(juegoId);
         }
-        catch (Exception ex) when (ex is RawgException or AppException)
+        catch (Exception ex) when (ex is SteamException or AppException)
         {
             return ficha;
         }

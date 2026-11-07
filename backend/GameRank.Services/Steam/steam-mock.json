@@ -1,0 +1,703 @@
+[
+  {
+    "type": "game",
+    "name": "God of War",
+    "steam_appid": 1593500,
+    "short_description": "Kratos y su hijo Atreus emprenden un viaje por los reinos de la mitología nórdica.",
+    "header_image": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1593500/header.jpg",
+    "release_date": {
+      "coming_soon": false,
+      "date": "14 ENE 2022"
+    },
+    "genres": [
+      {
+        "id": "1",
+        "description": "Acción"
+      },
+      {
+        "id": "25",
+        "description": "Aventura"
+      },
+      {
+        "id": "3",
+        "description": "Rol"
+      }
+    ],
+    "platforms": {
+      "windows": true,
+      "mac": false,
+      "linux": false
+    },
+    "developers": [
+      "Santa Monica Studio",
+      "Jetpack Interactive"
+    ],
+    "metacritic": {
+      "score": 93
+    }
+  },
+  {
+    "type": "game",
+    "name": "Celeste",
+    "steam_appid": 504230,
+    "short_description": "Plataformas de precisión sobre la escalada de una montaña.",
+    "header_image": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/504230/header.jpg",
+    "release_date": {
+      "coming_soon": false,
+      "date": "25 ENE 2018"
+    },
+    "genres": [
+      {
+        "id": "1",
+        "description": "Acción"
+      },
+      {
+        "id": "25",
+        "description": "Aventura"
+      },
+      {
+        "id": "23",
+        "description": "Indie"
+      }
+    ],
+    "platforms": {
+      "windows": true,
+      "mac": true,
+      "linux": true
+    },
+    "developers": [
+      "Maddy Makes Games Inc.",
+      "Extremely OK Games, Ltd."
+    ],
+    "metacritic": {
+      "score": 88
+    }
+  },
+  {
+    "type": "game",
+    "name": "Stardew Valley",
+    "steam_appid": 413150,
+    "short_description": "Simulador de vida en una granja heredada.",
+    "header_image": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/413150/header.jpg",
+    "release_date": {
+      "coming_soon": false,
+      "date": "26 FEB 2016"
+    },
+    "genres": [
+      {
+        "id": "23",
+        "description": "Indie"
+      },
+      {
+        "id": "3",
+        "description": "Rol"
+      },
+      {
+        "id": "28",
+        "description": "Simuladores"
+      }
+    ],
+    "platforms": {
+      "windows": true,
+      "mac": true,
+      "linux": true
+    },
+    "developers": [
+      "ConcernedApe"
+    ],
+    "metacritic": {
+      "score": 89
+    }
+  },
+  {
+    "type": "game",
+    "name": "Disco Elysium - The Final Cut",
+    "steam_appid": 632470,
+    "short_description": "RPG narrativo protagonizado por un detective amnésico.",
+    "header_image": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/632470/816ea59d6d8ac525f79a07c3a7afa94eddb3437c/header.jpg",
+    "release_date": {
+      "coming_soon": false,
+      "date": "15 OCT 2019"
+    },
+    "genres": [
+      {
+        "id": "3",
+        "description": "Rol"
+      }
+    ],
+    "platforms": {
+      "windows": true,
+      "mac": true,
+      "linux": false
+    },
+    "developers": [
+      "ZA/UM"
+    ],
+    "metacritic": {
+      "score": 97
+    }
+  },
+  {
+    "type": "game",
+    "name": "Hotline Miami",
+    "steam_appid": 219150,
+    "short_description": "Acción con vista cenital y estética de los años ochenta.",
+    "header_image": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/219150/header.jpg",
+    "release_date": {
+      "coming_soon": false,
+      "date": "23 OCT 2012"
+    },
+    "genres": [
+      {
+        "id": "1",
+        "description": "Acción"
+      },
+      {
+        "id": "23",
+        "description": "Indie"
+      }
+    ],
+    "platforms": {
+      "windows": true,
+      "mac": true,
+      "linux": true
+    },
+    "developers": [
+      "Dennaton Games"
+    ],
+    "metacritic": {
+      "score": 85
+    }
+  },
+  {
+    "type": "game",
+    "name": "Sid Meier’s Civilization® VI",
+    "steam_appid": 289070,
+    "short_description": "Estrategia por turnos para construir un imperio a lo largo de la historia.",
+    "header_image": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/289070/header.jpg",
+    "release_date": {
+      "coming_soon": false,
+      "date": "20 OCT 2016"
+    },
+    "genres": [
+      {
+        "id": "2",
+        "description": "Estrategia"
+      }
+    ],
+    "platforms": {
+      "windows": true,
+      "mac": true,
+      "linux": true
+    },
+    "developers": [
+      "Firaxis Games",
+      "Aspyr (Mac)",
+      "Aspyr (Linux)"
+    ],
+    "metacritic": {
+      "score": 88
+    }
+  },
+  {
+    "type": "game",
+    "name": "Forza Horizon 5",
+    "steam_appid": 1551360,
+    "short_description": "Carreras en mundo abierto ambientadas en México.",
+    "header_image": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1551360/header.jpg",
+    "release_date": {
+      "coming_soon": false,
+      "date": "8 NOV 2021"
+    },
+    "genres": [
+      {
+        "id": "1",
+        "description": "Acción"
+      },
+      {
+        "id": "25",
+        "description": "Aventura"
+      },
+      {
+        "id": "9",
+        "description": "Carreras"
+      },
+      {
+        "id": "28",
+        "description": "Simuladores"
+      },
+      {
+        "id": "18",
+        "description": "Deportes"
+      }
+    ],
+    "platforms": {
+      "windows": true,
+      "mac": false,
+      "linux": false
+    },
+    "developers": [
+      "Playground Games"
+    ]
+  },
+  {
+    "type": "game",
+    "name": "Cyberpunk 2077",
+    "steam_appid": 1091500,
+    "short_description": "RPG de acción en la megaciudad de Night City.",
+    "header_image": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1091500/48a93d6445a67520ea49833c93dae8f2e68fc540/header_alt_assets_9.jpg",
+    "release_date": {
+      "coming_soon": false,
+      "date": "9 DIC 2020"
+    },
+    "genres": [
+      {
+        "id": "3",
+        "description": "Rol"
+      }
+    ],
+    "platforms": {
+      "windows": true,
+      "mac": true,
+      "linux": false
+    },
+    "developers": [
+      "CD PROJEKT RED"
+    ],
+    "metacritic": {
+      "score": 86
+    }
+  },
+  {
+    "type": "game",
+    "name": "DARK SOULS™ III",
+    "steam_appid": 374320,
+    "short_description": "RPG de acción de alta dificultad en un reino en decadencia.",
+    "header_image": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/374320/header.jpg",
+    "release_date": {
+      "coming_soon": false,
+      "date": "11 ABR 2016"
+    },
+    "genres": [
+      {
+        "id": "1",
+        "description": "Acción"
+      }
+    ],
+    "platforms": {
+      "windows": true,
+      "mac": false,
+      "linux": false
+    },
+    "developers": [
+      "FromSoftware, Inc."
+    ],
+    "metacritic": {
+      "score": 89
+    }
+  },
+  {
+    "type": "game",
+    "name": "Kingdom Come: Deliverance",
+    "steam_appid": 379430,
+    "short_description": "RPG histórico ambientado en la Bohemia medieval.",
+    "header_image": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/379430/43b72106345687f4a2bf94d5f98335e52c1cd598/header.jpg",
+    "release_date": {
+      "coming_soon": false,
+      "date": "13 FEB 2018"
+    },
+    "genres": [
+      {
+        "id": "1",
+        "description": "Acción"
+      },
+      {
+        "id": "25",
+        "description": "Aventura"
+      },
+      {
+        "id": "3",
+        "description": "Rol"
+      }
+    ],
+    "platforms": {
+      "windows": true,
+      "mac": false,
+      "linux": false
+    },
+    "developers": [
+      "Warhorse Studios"
+    ],
+    "metacritic": {
+      "score": 76
+    }
+  },
+  {
+    "type": "game",
+    "name": "Red Dead Redemption 2",
+    "steam_appid": 1174180,
+    "short_description": "Aventura de mundo abierto en el final del Lejano Oeste.",
+    "header_image": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1174180/header.jpg",
+    "release_date": {
+      "coming_soon": false,
+      "date": "5 DIC 2019"
+    },
+    "genres": [
+      {
+        "id": "1",
+        "description": "Acción"
+      },
+      {
+        "id": "25",
+        "description": "Aventura"
+      }
+    ],
+    "platforms": {
+      "windows": true,
+      "mac": false,
+      "linux": false
+    },
+    "developers": [
+      "Rockstar Games"
+    ],
+    "metacritic": {
+      "score": 93
+    }
+  },
+  {
+    "type": "game",
+    "name": "DOOM Eternal",
+    "steam_appid": 782330,
+    "short_description": "Shooter frenético en primera persona.",
+    "header_image": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/782330/feaf8293bcd2d078422faa547bc0d707c08f606e/header.jpg",
+    "release_date": {
+      "coming_soon": false,
+      "date": "19 MAR 2020"
+    },
+    "genres": [
+      {
+        "id": "1",
+        "description": "Acción"
+      }
+    ],
+    "platforms": {
+      "windows": true,
+      "mac": false,
+      "linux": false
+    },
+    "developers": [
+      "id Software"
+    ],
+    "metacritic": {
+      "score": 88
+    }
+  },
+  {
+    "type": "game",
+    "name": "Terraria",
+    "steam_appid": 105600,
+    "short_description": "Exploración y construcción en dos dimensiones.",
+    "header_image": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/105600/header.jpg",
+    "release_date": {
+      "coming_soon": false,
+      "date": "16 MAY 2011"
+    },
+    "genres": [
+      {
+        "id": "1",
+        "description": "Acción"
+      },
+      {
+        "id": "25",
+        "description": "Aventura"
+      },
+      {
+        "id": "23",
+        "description": "Indie"
+      },
+      {
+        "id": "3",
+        "description": "Rol"
+      }
+    ],
+    "platforms": {
+      "windows": true,
+      "mac": true,
+      "linux": true
+    },
+    "developers": [
+      "Re-Logic"
+    ],
+    "metacritic": {
+      "score": 83
+    }
+  },
+  {
+    "type": "game",
+    "name": "Baldur's Gate 3",
+    "steam_appid": 1086940,
+    "short_description": "RPG por turnos basado en las reglas de Dungeons & Dragons.",
+    "header_image": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1086940/48a2fcbda8565bb45025e98fd8ebde8a7203f6a0/header.jpg",
+    "release_date": {
+      "coming_soon": false,
+      "date": "3 AGO 2023"
+    },
+    "genres": [
+      {
+        "id": "25",
+        "description": "Aventura"
+      },
+      {
+        "id": "3",
+        "description": "Rol"
+      },
+      {
+        "id": "2",
+        "description": "Estrategia"
+      }
+    ],
+    "platforms": {
+      "windows": true,
+      "mac": true,
+      "linux": false
+    },
+    "developers": [
+      "Larian Studios"
+    ],
+    "metacritic": {
+      "score": 96
+    }
+  },
+  {
+    "type": "game",
+    "name": "Sekiro™: Shadows Die Twice - GOTY Edition",
+    "steam_appid": 814380,
+    "short_description": "Acción y sigilo en el Japón del período Sengoku.",
+    "header_image": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/814380/header.jpg",
+    "release_date": {
+      "coming_soon": false,
+      "date": "21 MAR 2019"
+    },
+    "genres": [
+      {
+        "id": "1",
+        "description": "Acción"
+      },
+      {
+        "id": "25",
+        "description": "Aventura"
+      }
+    ],
+    "platforms": {
+      "windows": true,
+      "mac": false,
+      "linux": false
+    },
+    "developers": [
+      "FromSoftware, Inc."
+    ],
+    "metacritic": {
+      "score": 88
+    }
+  },
+  {
+    "type": "game",
+    "name": "Persona 5 Royal",
+    "steam_appid": 1687950,
+    "short_description": "RPG por turnos sobre un grupo de estudiantes con doble vida en Tokio.",
+    "header_image": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1687950/header.jpg",
+    "release_date": {
+      "coming_soon": false,
+      "date": "20 OCT 2022"
+    },
+    "genres": [
+      {
+        "id": "3",
+        "description": "Rol"
+      }
+    ],
+    "platforms": {
+      "windows": true,
+      "mac": false,
+      "linux": false
+    },
+    "developers": [
+      "ATLUS"
+    ],
+    "metacritic": {
+      "score": 95
+    }
+  },
+  {
+    "type": "game",
+    "name": "Half-Life 2",
+    "steam_appid": 220,
+    "short_description": "Shooter en primera persona ambientado en City 17.",
+    "header_image": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/220/header.jpg",
+    "release_date": {
+      "coming_soon": false,
+      "date": "16 NOV 2004"
+    },
+    "genres": [
+      {
+        "id": "1",
+        "description": "Acción"
+      }
+    ],
+    "platforms": {
+      "windows": true,
+      "mac": false,
+      "linux": true
+    },
+    "developers": [
+      "Valve"
+    ],
+    "metacritic": {
+      "score": 96
+    }
+  },
+  {
+    "type": "game",
+    "name": "Mass Effect™ Legendary Edition",
+    "steam_appid": 1328670,
+    "short_description": "Trilogía de ciencia ficción con decisiones que afectan la historia.",
+    "header_image": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1328670/header.jpg",
+    "release_date": {
+      "coming_soon": false,
+      "date": "14 MAY 2021"
+    },
+    "genres": [
+      {
+        "id": "1",
+        "description": "Acción"
+      },
+      {
+        "id": "3",
+        "description": "Rol"
+      }
+    ],
+    "platforms": {
+      "windows": true,
+      "mac": false,
+      "linux": false
+    },
+    "developers": [
+      "BioWare"
+    ],
+    "metacritic": {
+      "score": 86
+    }
+  },
+  {
+    "type": "game",
+    "name": "Slay the Spire",
+    "steam_appid": 646570,
+    "short_description": "Roguelike de cartas en el que se construye un mazo para subir una torre.",
+    "header_image": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/646570/header.jpg",
+    "release_date": {
+      "coming_soon": false,
+      "date": "23 ENE 2019"
+    },
+    "genres": [
+      {
+        "id": "23",
+        "description": "Indie"
+      },
+      {
+        "id": "2",
+        "description": "Estrategia"
+      }
+    ],
+    "platforms": {
+      "windows": true,
+      "mac": true,
+      "linux": true
+    },
+    "developers": [
+      "Mega Crit"
+    ],
+    "metacritic": {
+      "score": 89
+    }
+  },
+  {
+    "type": "game",
+    "name": "Factorio",
+    "steam_appid": 427520,
+    "short_description": "Construcción y automatización de fábricas en un planeta desconocido.",
+    "header_image": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/427520/ab9a2df0a77caebde20dc45adc021de8cdcf7cc5/header.jpg",
+    "release_date": {
+      "coming_soon": false,
+      "date": "14 AGO 2020"
+    },
+    "genres": [
+      {
+        "id": "4",
+        "description": "Casual"
+      },
+      {
+        "id": "23",
+        "description": "Indie"
+      },
+      {
+        "id": "28",
+        "description": "Simuladores"
+      },
+      {
+        "id": "2",
+        "description": "Estrategia"
+      }
+    ],
+    "platforms": {
+      "windows": true,
+      "mac": true,
+      "linux": true
+    },
+    "developers": [
+      "Wube Software LTD."
+    ],
+    "metacritic": {
+      "score": 90
+    }
+  },
+  {
+    "type": "game",
+    "name": "Vampire Survivors",
+    "steam_appid": 1794680,
+    "short_description": "Supervivencia contra hordas de monstruos con ataques automáticos.",
+    "header_image": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1794680/2ca07b690dde645771125ed9d9206c4c5fde4dd4/header.jpg",
+    "release_date": {
+      "coming_soon": false,
+      "date": "20 OCT 2022"
+    },
+    "genres": [
+      {
+        "id": "1",
+        "description": "Acción"
+      },
+      {
+        "id": "4",
+        "description": "Casual"
+      },
+      {
+        "id": "23",
+        "description": "Indie"
+      },
+      {
+        "id": "3",
+        "description": "Rol"
+      }
+    ],
+    "platforms": {
+      "windows": true,
+      "mac": true,
+      "linux": false
+    },
+    "developers": [
+      "poncle"
+    ],
+    "metacritic": {
+      "score": 86
+    }
+  }
+]

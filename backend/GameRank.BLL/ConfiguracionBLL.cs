@@ -1,6 +1,6 @@
 using GameRank.DAL;
 using GameRank.Services;
-using GameRank.Services.Rawg;
+using GameRank.Services.Steam;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace GameRank.BLL;
@@ -10,17 +10,17 @@ public static class ConfiguracionBLL
     public static IServiceCollection AgregarCapas(
         this IServiceCollection servicios,
         string cadena,
-        ConfiguracionRawg rawg,
+        ConfiguracionSteam steam,
         ConfiguracionRespaldo respaldo)
     {
         servicios.AddSingleton(new AccesoDatos(cadena));
-        servicios.AddSingleton(rawg);
+        servicios.AddSingleton(steam);
         servicios.AddSingleton(respaldo);
 
-        if (rawg.Modo.Equals("Real", StringComparison.OrdinalIgnoreCase))
-            servicios.AddSingleton<IRawgCliente>(new RawgHttp(rawg));
+        if (steam.Modo.Equals("Mock", StringComparison.OrdinalIgnoreCase))
+            servicios.AddSingleton<ISteamCliente>(new SteamMock());
         else
-            servicios.AddSingleton<IRawgCliente>(new RawgMock());
+            servicios.AddSingleton<ISteamCliente>(new SteamHttp(steam));
 
         servicios.AddScoped<SaludDAL>();
         servicios.AddScoped<SaludBLL>();

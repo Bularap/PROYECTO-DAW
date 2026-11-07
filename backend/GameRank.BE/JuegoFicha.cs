@@ -5,7 +5,6 @@ namespace GameRank.BE;
 public class JuegoFicha : JuegoResumen
 {
     public string? Sinopsis { get; set; }
-    public decimal? RatingRawg { get; set; }
     public byte? Metacritic { get; set; }
 
     [JsonIgnore]

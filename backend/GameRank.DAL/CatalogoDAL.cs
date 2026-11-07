@@ -57,7 +57,6 @@ public class CatalogoDAL
             var ficha = new JuegoFicha
             {
                 Sinopsis = TextoONulo(lector, "Sinopsis"),
-                RatingRawg = DecimalONulo(lector, "RatingRawg"),
                 Metacritic = ByteONulo(lector, "Metacritic"),
                 FechaSincronizacion = FechaUtc(lector, "FechaSincronizacion")
             };
@@ -130,7 +129,7 @@ public class CatalogoDAL
         var fecha = lector.GetOrdinal("FechaLanzamiento");
 
         juego.JuegoId = lector.GetInt32(lector.GetOrdinal("JuegoId"));
-        juego.RawgId = lector.GetInt32(lector.GetOrdinal("RawgId"));
+        juego.SteamAppId = lector.GetInt32(lector.GetOrdinal("SteamAppId"));
         juego.Titulo = lector.GetString(lector.GetOrdinal("Titulo"));
         juego.Slug = lector.GetString(lector.GetOrdinal("Slug"));
         juego.PortadaUrl = TextoONulo(lector, "PortadaUrl");

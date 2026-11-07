@@ -1,15 +1,15 @@
 using GameRank.BLL;
-using GameRank.Services.Rawg;
+using GameRank.Services.Steam;
 
 namespace GameRank.API;
 
 public class SincronizacionProgramada : BackgroundService
 {
     private readonly IServiceScopeFactory _ambitos;
-    private readonly ConfiguracionRawg _config;
+    private readonly ConfiguracionSteam _config;
     private readonly ILogger<SincronizacionProgramada> _log;
 
-    public SincronizacionProgramada(IServiceScopeFactory ambitos, ConfiguracionRawg config, ILogger<SincronizacionProgramada> log)
+    public SincronizacionProgramada(IServiceScopeFactory ambitos, ConfiguracionSteam config, ILogger<SincronizacionProgramada> log)
     {
         _ambitos = ambitos;
         _config = config;
@@ -37,12 +37,7 @@ public class SincronizacionProgramada : BackgroundService
             await using var ambito = _ambitos.CreateAsyncScope();
             var sincronizacion = ambito.ServiceProvider.GetRequiredService<SincronizacionBLL>();
 
-            await sincronizacion.Sincronizar(
-                SincronizacionBLL.OrigenProgramada,
-                null,
-                _config.PaginasPorCiclo,
-                _config.TamanioLote,
-                _config.MaxReintentos);
+            await sincronizacion.Sincronizar(SincronizacionBLL.OrigenProgramada, null, _config.MaxReintentos);
         }
         catch (Exception ex)
         {
