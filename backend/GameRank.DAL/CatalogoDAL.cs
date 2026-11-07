@@ -1,4 +1,5 @@
 using System.Data;
+using System.Text.Json;
 using GameRank.BE;
 using GameRank.Services;
 using Microsoft.Data.SqlClient;
@@ -8,6 +9,8 @@ namespace GameRank.DAL;
 
 public class CatalogoDAL
 {
+    private static readonly JsonSerializerOptions OpcionesJson = new() { PropertyNameCaseInsensitive = true };
+
     private readonly AccesoDatos _datos;
 
     public CatalogoDAL(AccesoDatos datos)
@@ -37,6 +40,8 @@ public class CatalogoDAL
                 resultado.Total = lector.GetInt32(lector.GetOrdinal("TotalResultados"));
                 var juego = new JuegoResumen();
                 LeerResumen(lector, juego);
+                var generos = TextoONulo(lector, "Generos");
+                juego.Generos = generos == null ? [] : JsonSerializer.Deserialize<List<ItemCatalogo>>(generos, OpcionesJson) ?? [];
                 resultado.Juegos.Add(juego);
             }
 

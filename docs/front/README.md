@@ -47,7 +47,7 @@ El selector "+ Mi lista" necesita sesión iniciada. Si no la hay, `WishlistStore
 - El autocompletado pasa de `rawg('games', { search: q, page_size: 6 })` a `buscarJuegos({ search: q, page_size: 6 })`.
 - La reseña necesita el `juegoId`, así que el usuario tiene que elegir el juego de las sugerencias. Si no lo hace, `ReviewStore.add` avisa con "Elegí un juego de la lista de sugerencias".
 - `ReviewStore.add` publica la reseña, guarda la puntuación y, si se eligió un estado, agrega el juego a la lista. Si la reseña falla, por ejemplo porque ya existe una para ese juego, no cambia nada más.
-- `ReviewStore.all` devuelve las reseñas del usuario en sesión, no las de toda la comunidad.
+- `ReviewStore.all` devuelve las reseñas del usuario en sesión. Para la lista "Reseñas de la comunidad", usar `GameRankApi.resenasRecientes(pagina)`, que devuelve las reseñas recientes de todos los juegos, con `titulo`, `nombreUsuario`, `puntuacion`, `contenido` y `fechaPublicacion`.
 - El campo de texto tiene `maxlength="1000"`, pero la API acepta hasta 2000 caracteres. Conviene alinearlos.
 
 ### wishlist.html y diario.html
@@ -79,5 +79,3 @@ El registro es igual con `GameRankApi.registrar(email, nombreUsuario, password, 
 ## Decisiones pendientes del grupo
 
 - **Estados de la lista.** El front usa "Quiero jugarlo", "En pausa" y "Abandonado". La base y el documento técnico usan "Jugado", "Quiero jugarlo" y "Abandonado". Con "En pausa", `api.js` responde que el estado no existe. Hay que cambiar `ESTADOS_LISTA` en el front o agregar "En pausa" en la base.
-- **Reseñas de la comunidad en reviews.html.** La API tiene el feed por juego y las reseñas por perfil, pero no un listado de todas las reseñas recientes.
-- **Géneros en las tarjetas del catálogo.** `/api/juegos` no devuelve géneros, así que las tarjetas muestran "Sin género".

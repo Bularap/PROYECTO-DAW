@@ -153,19 +153,34 @@ BEGIN
                 JOIN dbo.Plataforma p ON p.PlataformaId = jp.PlataformaId
                 WHERE jp.JuegoId = j.JuegoId
                   AND p.Slug IN (SELECT LTRIM(RTRIM(value)) FROM STRING_SPLIT(@Plataformas, ','))))
+    ),
+    Pagina AS (
+        SELECT JuegoId, SteamAppId, Titulo, Slug, PortadaUrl, FechaLanzamiento,
+               PromedioCalificacion, CantidadCalificaciones,
+               COUNT(*) OVER () AS TotalResultados
+        FROM Base
+        WHERE (@PuntuacionMin IS NULL OR PromedioCalificacion >= @PuntuacionMin)
+          AND (@PuntuacionMax IS NULL OR PromedioCalificacion <= @PuntuacionMax)
+        ORDER BY
+            CASE WHEN @Orden = 'PUNTUACION'  THEN PromedioCalificacion END DESC,
+            CASE WHEN @Orden = 'LANZAMIENTO' THEN FechaLanzamiento END DESC,
+            Titulo, JuegoId
+        OFFSET (@Pagina - 1) * @TamanioPagina ROWS
+        FETCH NEXT @TamanioPagina ROWS ONLY
     )
-    SELECT JuegoId, SteamAppId, Titulo, Slug, PortadaUrl, FechaLanzamiento,
-           PromedioCalificacion, CantidadCalificaciones,
-           COUNT(*) OVER () AS TotalResultados
-    FROM Base
-    WHERE (@PuntuacionMin IS NULL OR PromedioCalificacion >= @PuntuacionMin)
-      AND (@PuntuacionMax IS NULL OR PromedioCalificacion <= @PuntuacionMax)
+    SELECT p.JuegoId, p.SteamAppId, p.Titulo, p.Slug, p.PortadaUrl, p.FechaLanzamiento,
+           p.PromedioCalificacion, p.CantidadCalificaciones, p.TotalResultados,
+           (SELECT g.GeneroId AS id, g.Nombre AS nombre, g.Slug AS slug
+            FROM dbo.JuegoGenero jg
+            JOIN dbo.Genero g ON g.GeneroId = jg.GeneroId
+            WHERE jg.JuegoId = p.JuegoId
+            ORDER BY g.Nombre
+            FOR JSON PATH) AS Generos
+    FROM Pagina p
     ORDER BY
-        CASE WHEN @Orden = 'PUNTUACION'  THEN PromedioCalificacion END DESC,
-        CASE WHEN @Orden = 'LANZAMIENTO' THEN FechaLanzamiento END DESC,
-        Titulo
-    OFFSET (@Pagina - 1) * @TamanioPagina ROWS
-    FETCH NEXT @TamanioPagina ROWS ONLY
+        CASE WHEN @Orden = 'PUNTUACION'  THEN p.PromedioCalificacion END DESC,
+        CASE WHEN @Orden = 'LANZAMIENTO' THEN p.FechaLanzamiento END DESC,
+        p.Titulo, p.JuegoId
     OPTION (RECOMPILE);
 END
 GO
@@ -557,12 +572,13 @@ BEGIN
     IF @Pagina < 1 SET @Pagina = 1;
     IF @TamanioPagina NOT BETWEEN 1 AND 50 SET @TamanioPagina = 10;
 
-    SELECT ResenaId, UsuarioId, NombreUsuario, AvatarUrl, Puntuacion, Contenido,
-           FechaPublicacion, Editada,
+    SELECT f.ResenaId, f.JuegoId, j.Titulo, f.UsuarioId, f.NombreUsuario, f.AvatarUrl, f.Puntuacion, f.Contenido,
+           f.FechaPublicacion, f.Editada,
            COUNT(*) OVER () AS TotalResenas
-    FROM dbo.vw_FeedResenas
-    WHERE JuegoId = @JuegoId
-    ORDER BY FechaPublicacion DESC, ResenaId DESC
+    FROM dbo.vw_FeedResenas f
+    JOIN dbo.Juego j ON j.JuegoId = f.JuegoId
+    WHERE f.JuegoId = @JuegoId
+    ORDER BY f.FechaPublicacion DESC, f.ResenaId DESC
     OFFSET (@Pagina - 1) * @TamanioPagina ROWS
     FETCH NEXT @TamanioPagina ROWS ONLY;
 END
@@ -1066,5 +1082,23 @@ BEGIN
     VALUES (@Responsable, 'RESTAURAR_RESPALDO', 'RESPALDO', @RespaldoId, CONCAT(N'SolicitadoPor=', @UsuarioId));
 
     COMMIT TRANSACTION;
+END
+GO
+
+CREATE OR ALTER PROCEDURE dbo.sp_ObtenerResenasRecientes
+    @Pagina        INT,
+    @TamanioPagina INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    SELECT f.ResenaId, f.JuegoId, j.Titulo, f.UsuarioId, f.NombreUsuario, f.AvatarUrl, f.Puntuacion, f.Contenido,
+           f.FechaPublicacion, f.Editada,
+           COUNT(*) OVER () AS TotalResenas
+    FROM dbo.vw_FeedResenas f
+    JOIN dbo.Juego j ON j.JuegoId = f.JuegoId
+    ORDER BY f.FechaPublicacion DESC, f.ResenaId DESC
+    OFFSET (@Pagina - 1) * @TamanioPagina ROWS
+    FETCH NEXT @TamanioPagina ROWS ONLY;
 END
 GO

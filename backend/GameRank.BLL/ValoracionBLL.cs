@@ -56,16 +56,26 @@ public class ValoracionBLL
 
     public Task<ResultadoFeed> ObtenerFeed(int juegoId, int pagina, int tamanioPagina)
     {
-        if (pagina < 1)
-            throw new AppException(400, "La página debe ser mayor o igual a 1.");
-        if (tamanioPagina < 1 || tamanioPagina > 50)
-            throw new AppException(400, "El tamaño de página debe estar entre 1 y 50.");
-
+        ValidarPaginaFeed(pagina, tamanioPagina);
         return _dal.ObtenerFeed(juegoId, pagina, tamanioPagina);
+    }
+
+    public Task<ResultadoFeed> ObtenerRecientes(int pagina, int tamanioPagina)
+    {
+        ValidarPaginaFeed(pagina, tamanioPagina);
+        return _dal.ObtenerRecientes(pagina, tamanioPagina);
     }
 
     public Task<EstadoUsuarioJuego> ObtenerEstadoUsuario(int usuarioId, int juegoId) =>
         _dal.ObtenerEstadoUsuario(usuarioId, juegoId);
+
+    private static void ValidarPaginaFeed(int pagina, int tamanioPagina)
+    {
+        if (pagina < 1)
+            throw new AppException(400, "La página debe ser mayor o igual a 1.");
+        if (tamanioPagina < 1 || tamanioPagina > 50)
+            throw new AppException(400, "El tamaño de página debe estar entre 1 y 50.");
+    }
 
     private static string ValidarContenido(string? contenido)
     {

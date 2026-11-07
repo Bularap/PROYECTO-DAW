@@ -93,19 +93,36 @@ public class ValoracionDAL
             comando.Parameters.AddWithValue("@Pagina", pagina);
             comando.Parameters.AddWithValue("@TamanioPagina", tamanioPagina);
 
-            var feed = new ResultadoFeed { Pagina = pagina, TamanioPagina = tamanioPagina };
-
-            await using var lector = await comando.ExecuteReaderAsync();
-            while (await lector.ReadAsync())
-            {
-                feed.Total = lector.GetInt32(lector.GetOrdinal("TotalResenas"));
-                var resena = MapearResena(lector);
-                resena.JuegoId = juegoId;
-                feed.Resenas.Add(resena);
-            }
-
-            return feed;
+            return await LeerFeed(comando, pagina, tamanioPagina);
         });
+    }
+
+    public Task<ResultadoFeed> ObtenerRecientes(int pagina, int tamanioPagina)
+    {
+        return _datos.Ejecutar(async conexion =>
+        {
+            await using var comando = AccesoDatos.Procedimiento(conexion, "dbo.sp_ObtenerResenasRecientes");
+            comando.Parameters.AddWithValue("@Pagina", pagina);
+            comando.Parameters.AddWithValue("@TamanioPagina", tamanioPagina);
+            return await LeerFeed(comando, pagina, tamanioPagina);
+        });
+    }
+
+    private static async Task<ResultadoFeed> LeerFeed(SqlCommand comando, int pagina, int tamanioPagina)
+    {
+        var feed = new ResultadoFeed { Pagina = pagina, TamanioPagina = tamanioPagina };
+
+        await using var lector = await comando.ExecuteReaderAsync();
+        while (await lector.ReadAsync())
+        {
+            feed.Total = lector.GetInt32(lector.GetOrdinal("TotalResenas"));
+            var resena = MapearResena(lector);
+            resena.JuegoId = lector.GetInt32(lector.GetOrdinal("JuegoId"));
+            resena.Titulo = lector.GetString(lector.GetOrdinal("Titulo"));
+            feed.Resenas.Add(resena);
+        }
+
+        return feed;
     }
 
     public Task<EstadoUsuarioJuego> ObtenerEstadoUsuario(int usuarioId, int juegoId)
