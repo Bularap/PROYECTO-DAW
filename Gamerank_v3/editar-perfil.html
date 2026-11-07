@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Editar perfil · GameRank</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Source+Sans+3:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="css/perfiles.css">
+</head>
+<body>
+  <main class="container" id="main"></main>
+  <script src="js/demo-data.js"></script>
+  <script src="js/app.js"></script>
+  <script src="js/perfil-store.js"></script>
+  <script>
+    cabecera('perfil.html'); pie();
+    const main = $('#main');
+    (async () => {
+      let c;
+      try { c = await CuentaStore.get(); } catch (e) { return showStatus(main, e.message, 'error'); }
+      const previa = el('div', { id: 'previa' }, avatar(c.avatarUrl, c.nombreUsuario, true));
+      const repintar = () => previa.replaceChildren(avatar($('#avatarUrl').value.trim(), $('#nombreUsuario').value.trim() || c.nombreUsuario, true));
+      main.replaceChildren(el('section', { class: 'panel form-panel' },
+        el('h1', { style: 'font-size:1.6rem' }, 'Editar perfil'), previa,
+        campo('nombreUsuario', 'Nombre de usuario', 'text', { value: c.nombreUsuario, maxlength: 30, autocomplete: 'username' }),
+        campo('avatarUrl', 'URL del avatar (opcional)', 'text', { value: c.avatarUrl || '', placeholder: 'https://…' }),
+        el('p', { id: 'aviso', class: 'aviso', role: 'status' }),
+        el('div', { class: 'row-btns' },
+          el('button', { class: 'btn', type: 'button', id: 'guardar' }, 'Guardar cambios'), el('a', { class: 'btn btn-ghost', href: 'perfil.html' }, 'Cancelar'))));
+      $('#avatarUrl').addEventListener('change', repintar);
+      $('#guardar').addEventListener('click', async e => {
+        const nombre = $('#nombreUsuario').value.trim(), url = $('#avatarUrl').value.trim();
+        const ok = [errorCampo('nombreUsuario', USER_OK.test(nombre) ? '' : 'Entre 3 y 30 caracteres: letras, números o guión bajo.'),
+                    errorCampo('avatarUrl', !url || /^https?:\/\//i.test(url) ? '' : 'La URL debe empezar con http:// o https://.')].every(Boolean);
+        if (!ok) return;
+        e.target.disabled = true; aviso('');
+        try { await CuentaStore.guardar({ nombreUsuario: nombre, avatarUrl: url || null }); aviso('Perfil actualizado.', true); setTimeout(() => location.href = 'perfil.html', 700); }
+        catch (err) { if (err.status === 409) errorCampo('nombreUsuario', 'Ese nombre de usuario ya está en uso.'); else aviso(err.message); }
+        e.target.disabled = false;
+      });
+    })();
+  </script>
+</body>
+</html>

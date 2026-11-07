@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Perfil · GameRank</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Source+Sans+3:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="css/perfiles.css">
+</head>
+<body>
+  <main class="container" id="main"></main>
+  <script src="js/demo-data.js"></script>
+  <script src="js/app.js"></script>
+  <script src="js/perfil-store.js"></script>
+  <script>
+    cabecera('perfil.html'); pie();
+    const main = $('#main');
+    const id = new URLSearchParams(location.search).get('id');      // sin id = perfil propio
+    const fecha = iso => new Date(iso).toLocaleDateString('es-AR');
+
+    function tarjetaJuego(c) {
+      return el('article', { class: 'card' },
+        c.PortadaUrl ? el('img', { src: c.PortadaUrl, alt: `Portada de ${c.Titulo}`, loading: 'lazy' }) : null,
+        el('div', { class: 'card-body' }, el('h3', {}, c.Titulo),
+          el('span', { class: 'stars', role: 'img', 'aria-label': `${c.Puntuacion} de 5 estrellas` }, stars(c.Puntuacion))));
+    }
+    function filaResena(r, propio, perfil) {
+      const fila = el('article', { class: 'review' },
+        el('h3', {}, r.Titulo),
+        el('p', { class: 'meta' }, el('span', { class: 'stars' }, stars(r.Puntuacion)), ` · ${fecha(r.FechaPublicacion)}${r.Editada ? ' (editada)' : ''}`),
+        el('p', {}, r.Contenido));
+      if (propio) fila.append(el('div', { class: 'review-actions' },
+        el('a', { class: 'btn btn-ghost', href: `reviews.html?id=${r.JuegoId}&nombre=${encodeURIComponent(r.Titulo)}` }, 'Editar'),
+        el('button', { type: 'button', class: 'btn btn-ghost', onclick: async () => {
+          if (!confirm('¿Eliminar esta reseña? No se puede deshacer.')) return;
+          try { await PerfilStore.eliminarResena(r.ResenaId); mostrar(await PerfilStore.obtener(id)); }   // vuelve a pedir el perfil
+          catch (e) { alert(e.message); }
+        } }, 'Eliminar')));
+      return fila;
+    }
+    function mostrar(p) {
+      const u = p.usuario;
+      const stats = [[u.PromedioOtorgado == null ? '–' : Number(u.PromedioOtorgado).toFixed(1), 'Promedio de notas'],
+        [u.CantidadCalificaciones, 'Juegos calificados'], [u.CantidadResenas, 'Reseñas'], ...p.estados.map(e => [e.Cantidad, e.Nombre])];
+      main.replaceChildren(
+        el('div', { class: 'profile-head' }, avatar(u.AvatarUrl, u.NombreUsuario, true),
+          el('div', {}, el('h1', {}, u.NombreUsuario), el('p', { class: 'meta', style: 'margin:0' }, `Miembro desde ${fecha(u.FechaRegistro)}`),
+            p.esPropio ? el('div', { class: 'row-btns' }, el('a', { class: 'btn', href: 'editar-perfil.html' }, 'Editar perfil'), el('a', { class: 'btn btn-ghost', href: 'configuracion.html' }, 'Configuración')) : null)),
+        el('section', { class: 'stats', 'aria-label': 'Estadísticas' }, ...stats.map(([n, t]) => el('div', { class: 'stat' }, el('strong', {}, String(n)), el('span', {}, t)))),
+        el('h2', {}, 'Juegos calificados'), el('div', { class: 'grid compact', id: 'calificados' }),
+        el('h2', {}, 'Reseñas publicadas'), el('div', { id: 'resenas' }));
+      const g = $('#calificados'), r = $('#resenas');
+      if (p.calificaciones.length) g.replaceChildren(...p.calificaciones.map(tarjetaJuego));
+      else { showStatus(g, 'Todavía no calificó ningún juego.'); if (p.esPropio) g.firstChild.append(' ', el('a', { href: 'index.html' }, 'Calificá el primero'), '.'); }
+      if (p.resenas.length) r.replaceChildren(...p.resenas.map(x => filaResena(x, p.esPropio)));
+      else showStatus(r, 'Sin reseñas publicadas.');
+    }
+    (async () => {
+      showStatus(main, 'Cargando perfil…');
+      try { mostrar(await PerfilStore.obtener(id)); }
+      catch (e) { showStatus(main, e.status === 404 ? 'Perfil no disponible.' : e.message, 'error'); }   // sp_ObtenerPerfil lanza 50404
+    })();
+  </script>
+</body>
+</html>

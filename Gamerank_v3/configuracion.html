@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Configuración · GameRank</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Source+Sans+3:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="css/perfiles.css">
+</head>
+<body>
+  <main class="container" id="main"></main>
+  <script src="js/demo-data.js"></script>
+  <script src="js/app.js"></script>
+  <script src="js/perfil-store.js"></script>
+  <script>
+    cabecera('perfil.html'); pie();
+    const main = $('#main');
+    function panel(titulo, ...hijos) { return el('section', { class: 'panel form-panel' }, el('h2', {}, titulo), ...hijos); }
+
+    async function enviar(btn, fn, okTexto) {
+      btn.disabled = true; aviso('');
+      try { await fn(); aviso(okTexto, true); }
+      catch (e) { aviso(e.status === 409 ? 'Ese correo ya está registrado.' : e.status === 401 ? 'La contraseña actual no es correcta.' : e.message); }
+      btn.disabled = false;
+    }
+    (async () => {
+      let c;
+      try { c = await CuentaStore.get(); } catch (e) { return showStatus(main, e.message, 'error'); }
+      const chk = (id, txt, v) => el('label', { class: 'check' }, el('input', { type: 'checkbox', id, checked: v }), txt);
+      main.replaceChildren(
+        el('h1', { style: 'margin-top:1.5rem' }, 'Configuración'),
+        el('p', { id: 'aviso', class: 'aviso', role: 'status' }),
+        panel('Correo electrónico', campo('email', 'Correo', 'email', { value: c.email, autocomplete: 'email' }), campo('passEmail', 'Contraseña actual', 'password', { autocomplete: 'current-password' }),
+          el('button', { class: 'btn', type: 'button', onclick: e => {
+            const ok = [errorCampo('email', EMAIL_OK.test($('#email').value.trim()) ? '' : 'Ingresá un correo válido.'), errorCampo('passEmail', $('#passEmail').value ? '' : 'Ingresá tu contraseña.')].every(Boolean);
+            if (ok) enviar(e.target, () => CuentaStore.cambiarEmail($('#email').value.trim(), $('#passEmail').value), 'Correo actualizado.');
+          } }, 'Guardar correo')),
+        panel('Contraseña', campo('pActual', 'Contraseña actual', 'password', { autocomplete: 'current-password' }), campo('pNueva', 'Nueva contraseña', 'password', { autocomplete: 'new-password' }), campo('pRep', 'Repetir nueva contraseña', 'password', { autocomplete: 'new-password' }),
+          el('button', { class: 'btn', type: 'button', onclick: e => {
+            const ok = [errorCampo('pActual', $('#pActual').value ? '' : 'Ingresá tu contraseña actual.'),
+              errorCampo('pNueva', PASS_OK.test($('#pNueva').value) ? '' : 'Mínimo 8 caracteres, con mayúscula, minúscula y número.'),
+              errorCampo('pRep', $('#pRep').value === $('#pNueva').value ? '' : 'Las contraseñas no coinciden.')].every(Boolean);
+            if (ok) enviar(e.target, async () => { await CuentaStore.cambiarPassword($('#pActual').value, $('#pNueva').value); ['pActual', 'pNueva', 'pRep'].forEach(i => $('#' + i).value = ''); }, 'Contraseña actualizada.');
+          } }, 'Cambiar contraseña')),
+        panel('Privacidad', chk('perfilPublico', 'Mi perfil es público', c.perfilPublico), chk('mostrarListas', 'Mostrar mis listas de juegos en mi perfil', c.mostrarListas),
+          el('p', { class: 'meta' }, 'Tratamos tus datos según la Ley 25.326.'),
+          el('button', { class: 'btn', type: 'button', onclick: e => enviar(e.target, () => CuentaStore.guardar({ perfilPublico: $('#perfilPublico').checked, mostrarListas: $('#mostrarListas').checked }), 'Privacidad guardada.') }, 'Guardar privacidad')),
+        panel('Eliminar cuenta', el('p', {}, 'Podés pedir la supresión de tus datos (Ley 25.326). Se borran tus calificaciones, reseñas y listas, y no se puede deshacer.'),
+          el('button', { class: 'btn btn-danger', type: 'button', onclick: e => {
+            if (!confirm('Esto elimina tu cuenta y tus datos de forma permanente. ¿Continuar?')) return;
+            enviar(e.target, async () => { await CuentaStore.eliminar(); location.href = 'index.html'; }, '');
+          } }, 'Eliminar mi cuenta')));
+    })();
+  </script>
+</body>
+</html>

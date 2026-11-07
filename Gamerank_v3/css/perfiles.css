@@ -1,0 +1,10 @@
+/* Extras para perfil, configuración, editar perfil y biblioteca (usa las variables de styles.css) */
+.avatar img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; }
+.avatar.grande { width: 96px; height: 96px; font-size: 2.6rem; overflow: hidden; }
+.form-panel { max-width: 560px; margin-block: 2rem; }
+.form-panel + .form-panel { margin-top: -.5rem; }
+.btn-danger { background: #a12a2a; }
+.btn-danger:hover { background: #c23535; }
+.aviso { min-height: 1.4em; margin: .5rem 0 0; color: var(--error); }
+.aviso.ok { color: var(--gold); }
+.row-btns { display: flex; gap: .6rem; flex-wrap: wrap; margin-top: .5rem; }

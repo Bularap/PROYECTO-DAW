@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mi biblioteca · GameRank</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Source+Sans+3:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="css/perfiles.css">
+</head>
+<body>
+  <main class="container" id="main"></main>
+  <script src="js/demo-data.js"></script>
+  <script src="js/app.js"></script>
+  <script src="js/perfil-store.js"></script>
+  <script>
+    cabecera('biblioteca.html'); pie();
+    const main = $('#main');
+    main.append(el('div', { class: 'page-head' }, el('h1', {}, 'Mi biblioteca'), el('p', { class: 'meta' }, 'Tus juegos jugados, pendientes y abandonados. Cambiá el estado o quitalos cuando quieras.')),
+      el('div', { class: 'tabs', id: 'tabs', role: 'group', 'aria-label': 'Filtrar por estado' }), el('div', { id: 'lista', class: 'grid', 'aria-live': 'polite' }));
+    const lista = $('#lista'), tabs = $('#tabs'), FILTROS = ['Todos', ...ESTADOS_DB];
+    let items = [], filtro = 'Todos';
+
+    function tarjeta(g) {
+      const generos = (g.genres || []).slice(0, 2).join(', ') || 'Sin género', rating = Number(g.rating) || 0;
+      const sel = el('select', { id: `estado-${g.id}`, onchange: async e => {
+        const previo = g.estado; g.estado = e.target.value; pintar();                 // actualización inmediata del DOM
+        try { await BibliotecaStore.setEstado(g.id, g.estado); }
+        catch (err) { g.estado = previo; pintar(); showStatus($('#aviso-bib'), err.message, 'error'); }   // si falla, revierte
+        $(`#estado-${g.id}`)?.focus();
+      } }, ...ESTADOS_DB.map(s => el('option', { value: s, selected: s === g.estado }, s)));
+      return el('article', { class: 'card' },
+        el('img', { src: g.background_image || '', alt: `Portada de ${g.name}`, loading: 'lazy' }),
+        el('div', { class: 'card-body' }, el('h3', {}, g.name), el('p', { class: 'meta' }, `${generos} · ${g.released ? g.released.slice(0, 4) : 's/f'}`),
+          el('p', { class: 'meta' }, el('span', { class: 'stars', 'aria-hidden': 'true' }, stars(Math.round(rating))), ` ${rating.toFixed(1)}/5`),
+          el('label', { class: 'sr-only', for: `estado-${g.id}` }, `Estado de ${g.name}`), sel,
+          el('div', { class: 'card-actions' },
+            el('a', { class: 'btn', href: `reviews.html?id=${g.id}&nombre=${encodeURIComponent(g.name)}` }, 'Escribir reseña'),
+            el('button', { type: 'button', class: 'btn btn-ghost', onclick: async () => {
+              if (!confirm('¿Quitar este juego de tu biblioteca?')) return;
+              const copia = items; items = items.filter(x => x !== g); pintar();
+              try { await BibliotecaStore.quitar(g.id); } catch (err) { items = copia; pintar(); showStatus($('#aviso-bib'), err.message, 'error'); }
+            } }, 'Quitar'))));
+    }
+    function pintar() {
+      tabs.replaceChildren(...FILTROS.map(f => el('button', { type: 'button', class: 'tab', 'aria-pressed': String(f === filtro), onclick: () => { filtro = f; pintar(); } },
+        `${f} (${f === 'Todos' ? items.length : items.filter(x => x.estado === f).length})`)));
+      const vis = filtro === 'Todos' ? items : items.filter(x => x.estado === filtro);
+      if (!vis.length) return showStatus(lista, items.length ? `No tenés juegos en “${filtro}”.` : 'Tu biblioteca está vacía. Agregá juegos desde la sección Juegos.');
+      lista.replaceChildren(...vis.map(tarjeta));
+    }
+    main.insertBefore(el('div', { id: 'aviso-bib' }), $('#tabs'));
+    (async () => {
+      showStatus(lista, 'Cargando…');
+      try { items = await BibliotecaStore.all(); pintar(); }
+      catch (e) { showStatus(lista, e.message, 'error'); lista.firstChild.append(' ', el('button', { class: 'btn btn-ghost', type: 'button', onclick: () => location.reload() }, 'Reintentar')); }
+    })();
+  </script>
+</body>
+</html>
