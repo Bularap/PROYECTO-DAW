@@ -60,57 +60,52 @@ CREATE INDEX IX_Sesion_UsuarioId ON dbo.Sesion (UsuarioId);
 GO
 
 /* -----------------------------------------------------------------------------
-   M02 / M03 - Catalogo (datos normalizados desde la RAWG API)
+   M02 / M03 - Catalogo (datos normalizados desde la API de Steam)
    ----------------------------------------------------------------------------- */
 
 CREATE TABLE dbo.Desarrolladora (
     DesarrolladoraId INT IDENTITY(1,1) NOT NULL,
-    RawgId           INT           NOT NULL,
     Nombre           NVARCHAR(150) NOT NULL,
     Slug             NVARCHAR(150) NOT NULL,
     CONSTRAINT PK_Desarrolladora PRIMARY KEY (DesarrolladoraId),
-    CONSTRAINT UQ_Desarrolladora_RawgId UNIQUE (RawgId)
+    CONSTRAINT UQ_Desarrolladora_Slug UNIQUE (Slug)
 );
 GO
 
 CREATE TABLE dbo.Genero (
     GeneroId    INT IDENTITY(1,1) NOT NULL,
-    RawgId      INT           NOT NULL,
+    SteamId     INT           NOT NULL,
     Nombre      NVARCHAR(60)  NOT NULL,
     Slug        NVARCHAR(60)  NOT NULL,
     CONSTRAINT PK_Genero PRIMARY KEY (GeneroId),
-    CONSTRAINT UQ_Genero_RawgId UNIQUE (RawgId),
+    CONSTRAINT UQ_Genero_SteamId UNIQUE (SteamId),
     CONSTRAINT UQ_Genero_Slug UNIQUE (Slug)
 );
 GO
 
 CREATE TABLE dbo.Plataforma (
     PlataformaId INT IDENTITY(1,1) NOT NULL,
-    RawgId       INT           NOT NULL,
     Nombre       NVARCHAR(60)  NOT NULL,
     Slug         NVARCHAR(60)  NOT NULL,
     CONSTRAINT PK_Plataforma PRIMARY KEY (PlataformaId),
-    CONSTRAINT UQ_Plataforma_RawgId UNIQUE (RawgId),
     CONSTRAINT UQ_Plataforma_Slug UNIQUE (Slug)
 );
 GO
 
 CREATE TABLE dbo.Juego (
     JuegoId           INT IDENTITY(1,1) NOT NULL,
-    RawgId            INT            NOT NULL,
+    SteamAppId        INT            NOT NULL,
     Titulo            NVARCHAR(255)  NOT NULL,
     Slug              NVARCHAR(255)  NOT NULL,
     Sinopsis          NVARCHAR(MAX)  NULL,          -- campos opcionales de la API: NULL => "Informacion no disponible" (CU06 4b)
     FechaLanzamiento  DATE           NULL,
     PortadaUrl        NVARCHAR(500)  NULL,
-    RatingRawg        DECIMAL(3,2)   NULL,
     Metacritic        TINYINT        NULL,
     FechaAlta         DATETIME2(0)   NOT NULL CONSTRAINT DF_Juego_FechaAlta DEFAULT (SYSUTCDATETIME()),
     FechaSincronizacion DATETIME2(0) NOT NULL CONSTRAINT DF_Juego_FechaSync DEFAULT (SYSUTCDATETIME()),
     CONSTRAINT PK_Juego PRIMARY KEY (JuegoId),
-    CONSTRAINT UQ_Juego_RawgId UNIQUE (RawgId),
+    CONSTRAINT UQ_Juego_SteamAppId UNIQUE (SteamAppId),
     CONSTRAINT UQ_Juego_Slug UNIQUE (Slug),
-    CONSTRAINT CK_Juego_RatingRawg CHECK (RatingRawg BETWEEN 0 AND 5),
     CONSTRAINT CK_Juego_Metacritic CHECK (Metacritic BETWEEN 0 AND 100)
 );
 GO
@@ -273,7 +268,7 @@ CREATE INDEX IX_Auditoria_Actor ON dbo.Auditoria (UsuarioActorId);
 GO
 
 /* -----------------------------------------------------------------------------
-   M03 - Bitacora de sincronizacion con la RAWG API (CU15)
+   M03 - Bitacora de sincronizacion con la API de Steam (CU15)
    ----------------------------------------------------------------------------- */
 
 CREATE TABLE dbo.SincronizacionApi (

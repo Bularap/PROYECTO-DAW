@@ -1,4 +1,4 @@
-/* =============================================================================
+﻿/* =============================================================================
    GAME RANK - Script 04: Procedimientos almacenados
 
    Convencion de errores (THROW): el numero de error es 50000 + codigo HTTP que el
@@ -25,13 +25,13 @@ BEGIN
     SET NOCOUNT ON;
 
     IF @AceptaPrivacidad IS NULL OR @AceptaPrivacidad = 0
-        THROW 50400, 'Debe aceptar la Politica de Privacidad (Ley 25.326).', 1;
+        THROW 50400, N'Debe aceptar la Política de Privacidad (Ley 25.326).', 1;
 
     IF EXISTS (SELECT 1 FROM dbo.Usuario WHERE Email = @Email)
-        THROW 50409, 'El correo ya se encuentra registrado.', 1;
+        THROW 50409, N'El correo ya se encuentra registrado.', 1;
 
     IF EXISTS (SELECT 1 FROM dbo.Usuario WHERE NombreUsuario = @NombreUsuario)
-        THROW 50409, 'El nombre de usuario ya se encuentra en uso.', 1;
+        THROW 50409, N'El nombre de usuario ya se encuentra en uso.', 1;
 
     INSERT INTO dbo.Usuario (Email, NombreUsuario, PasswordHash, RolId,
                              AceptaPrivacidad, FechaConsentimiento, VersionPolitica)
@@ -68,7 +68,7 @@ BEGIN
     SET NOCOUNT ON;
 
     IF EXISTS (SELECT 1 FROM dbo.Usuario WHERE UsuarioId = @UsuarioId AND Bloqueado = 1)
-        THROW 50403, 'La cuenta se encuentra suspendida.', 1;
+        THROW 50403, N'La cuenta se encuentra suspendida.', 1;
 
     INSERT INTO dbo.Sesion (UsuarioId, TokenHash, FechaExpiracion, IpOrigen)
     VALUES (@UsuarioId, @TokenHash, DATEADD(MINUTE, @MinutosVida, SYSUTCDATETIME()), @IpOrigen);
@@ -131,7 +131,7 @@ BEGIN
     IF @TamanioPagina NOT BETWEEN 1 AND 100 SET @TamanioPagina = 24;
 
     WITH Base AS (
-        SELECT j.JuegoId, j.RawgId, j.Titulo, j.Slug, j.PortadaUrl, j.FechaLanzamiento,
+        SELECT j.JuegoId, j.SteamAppId, j.Titulo, j.Slug, j.PortadaUrl, j.FechaLanzamiento,
                m.PromedioCalificacion, m.CantidadCalificaciones
         FROM dbo.Juego j
         OUTER APPLY (
@@ -154,7 +154,7 @@ BEGIN
                 WHERE jp.JuegoId = j.JuegoId
                   AND p.Slug IN (SELECT LTRIM(RTRIM(value)) FROM STRING_SPLIT(@Plataformas, ','))))
     )
-    SELECT JuegoId, RawgId, Titulo, Slug, PortadaUrl, FechaLanzamiento,
+    SELECT JuegoId, SteamAppId, Titulo, Slug, PortadaUrl, FechaLanzamiento,
            PromedioCalificacion, CantidadCalificaciones,
            COUNT(*) OVER () AS TotalResultados
     FROM Base
@@ -178,10 +178,10 @@ BEGIN
     SET NOCOUNT ON;
 
     IF NOT EXISTS (SELECT 1 FROM dbo.Juego WHERE JuegoId = @JuegoId)
-        THROW 50404, 'Juego no encontrado.', 1;
+        THROW 50404, N'Juego no encontrado.', 1;
 
-    SELECT j.JuegoId, j.RawgId, j.Titulo, j.Slug, j.Sinopsis, j.FechaLanzamiento,
-           j.PortadaUrl, j.RatingRawg, j.Metacritic, j.FechaSincronizacion,
+    SELECT j.JuegoId, j.SteamAppId, j.Titulo, j.Slug, j.Sinopsis, j.FechaLanzamiento,
+           j.PortadaUrl, j.Metacritic, j.FechaSincronizacion,
            m.PromedioCalificacion, m.CantidadCalificaciones
     FROM dbo.Juego j
     JOIN dbo.vw_JuegoMetricas m ON m.JuegoId = j.JuegoId
@@ -206,39 +206,38 @@ GO
 
 /* -----------------------------------------------------------------------------
    M03 - Integracion API Externa (CU15)
-   Recibe el JSON de detalle de un juego tal como lo devuelve la RAWG API
-   (GET /api/games/{id}) y lo normaliza en Juego, Genero, Plataforma y Desarrolladora.
+   Recibe el JSON normalizado de un juego de Steam y lo guarda en Juego, Genero,
+   Plataforma y Desarrolladora. Las relaciones se reemplazan solo si vienen en el JSON.
    ----------------------------------------------------------------------------- */
 
 CREATE OR ALTER PROCEDURE dbo.sp_UpsertJuegoDesdeApi
     @Json      NVARCHAR(MAX),
-    @Resultado CHAR(1) OUTPUT          -- I = insertado, U = actualizado
+    @Resultado CHAR(1) OUTPUT
 AS
 BEGIN
     SET NOCOUNT ON;
     SET XACT_ABORT ON;
 
     IF ISJSON(@Json) <> 1
-        THROW 50400, 'El JSON recibido no es valido.', 1;
+        THROW 50400, N'El JSON recibido no es válido.', 1;
 
-    DECLARE @RawgId INT, @Titulo NVARCHAR(255), @Slug NVARCHAR(255), @Sinopsis NVARCHAR(MAX),
-            @Lanzamiento DATE, @Portada NVARCHAR(500), @Rating DECIMAL(3,2), @Metacritic TINYINT;
+    DECLARE @SteamAppId INT, @Titulo NVARCHAR(255), @Slug NVARCHAR(255), @Sinopsis NVARCHAR(MAX),
+            @Lanzamiento DATE, @Portada NVARCHAR(500), @Metacritic TINYINT;
 
-    SELECT @RawgId = RawgId, @Titulo = Titulo, @Slug = Slug, @Sinopsis = Sinopsis,
-           @Lanzamiento = Lanzamiento, @Portada = Portada, @Rating = Rating, @Metacritic = Metacritic
+    SELECT @SteamAppId = SteamAppId, @Titulo = Titulo, @Slug = Slug, @Sinopsis = Sinopsis,
+           @Lanzamiento = Lanzamiento, @Portada = Portada, @Metacritic = Metacritic
     FROM OPENJSON(@Json) WITH (
-        RawgId      INT            '$.id',
-        Titulo      NVARCHAR(255)  '$.name',
+        SteamAppId  INT            '$.steamAppId',
+        Titulo      NVARCHAR(255)  '$.nombre',
         Slug        NVARCHAR(255)  '$.slug',
-        Sinopsis    NVARCHAR(MAX)  '$.description_raw',
-        Lanzamiento DATE           '$.released',
-        Portada     NVARCHAR(500)  '$.background_image',
-        Rating      DECIMAL(3,2)   '$.rating',
+        Sinopsis    NVARCHAR(MAX)  '$.sinopsis',
+        Lanzamiento DATE           '$.lanzamiento',
+        Portada     NVARCHAR(500)  '$.portada',
         Metacritic  TINYINT        '$.metacritic'
     );
 
-    IF @RawgId IS NULL OR @Titulo IS NULL OR @Slug IS NULL
-        THROW 50400, 'El JSON no contiene id, name o slug.', 1;
+    IF @SteamAppId IS NULL OR @Titulo IS NULL OR @Slug IS NULL
+        THROW 50400, N'El JSON no contiene steamAppId, nombre o slug.', 1;
 
     DECLARE @JuegoId INT;
 
@@ -250,64 +249,67 @@ BEGIN
         Sinopsis = COALESCE(@Sinopsis, Sinopsis),
         FechaLanzamiento = COALESCE(@Lanzamiento, FechaLanzamiento),
         PortadaUrl = COALESCE(@Portada, PortadaUrl),
-        RatingRawg = @Rating, Metacritic = @Metacritic,
+        Metacritic = COALESCE(@Metacritic, Metacritic),
         FechaSincronizacion = SYSUTCDATETIME()
-    WHERE RawgId = @RawgId;
+    WHERE SteamAppId = @SteamAppId;
 
     IF @JuegoId IS NULL
     BEGIN
-        INSERT INTO dbo.Juego (RawgId, Titulo, Slug, Sinopsis, FechaLanzamiento, PortadaUrl, RatingRawg, Metacritic)
-        VALUES (@RawgId, @Titulo, @Slug, @Sinopsis, @Lanzamiento, @Portada, @Rating, @Metacritic);
+        INSERT INTO dbo.Juego (SteamAppId, Titulo, Slug, Sinopsis, FechaLanzamiento, PortadaUrl, Metacritic)
+        VALUES (@SteamAppId, @Titulo, @Slug, @Sinopsis, @Lanzamiento, @Portada, @Metacritic);
         SET @JuegoId = SCOPE_IDENTITY();
         SET @Resultado = 'I';
     END
     ELSE
         SET @Resultado = 'U';
 
-    -- Generos
-    MERGE dbo.Genero AS t
-    USING (SELECT DISTINCT id, name, slug
-           FROM OPENJSON(@Json, '$.genres') WITH (id INT, name NVARCHAR(60), slug NVARCHAR(60))) AS s
-    ON t.RawgId = s.id
-    WHEN MATCHED AND t.Nombre <> s.name THEN UPDATE SET Nombre = s.name
-    WHEN NOT MATCHED THEN INSERT (RawgId, Nombre, Slug) VALUES (s.id, s.name, s.slug);
-
-    DELETE FROM dbo.JuegoGenero WHERE JuegoId = @JuegoId;
-    INSERT INTO dbo.JuegoGenero (JuegoId, GeneroId)
-    SELECT DISTINCT @JuegoId, g.GeneroId
-    FROM OPENJSON(@Json, '$.genres') WITH (id INT) s
-    JOIN dbo.Genero g ON g.RawgId = s.id;
-
-    -- Plataformas (RAWG las anida en platforms[].platform)
-    MERGE dbo.Plataforma AS t
-    USING (SELECT DISTINCT id, name, slug
-           FROM OPENJSON(@Json, '$.platforms') WITH (
-                id INT '$.platform.id', name NVARCHAR(60) '$.platform.name', slug NVARCHAR(60) '$.platform.slug')) AS s
-    ON t.RawgId = s.id
-    WHEN MATCHED AND t.Nombre <> s.name THEN UPDATE SET Nombre = s.name
-    WHEN NOT MATCHED THEN INSERT (RawgId, Nombre, Slug) VALUES (s.id, s.name, s.slug);
-
-    DELETE FROM dbo.JuegoPlataforma WHERE JuegoId = @JuegoId;
-    INSERT INTO dbo.JuegoPlataforma (JuegoId, PlataformaId)
-    SELECT DISTINCT @JuegoId, p.PlataformaId
-    FROM OPENJSON(@Json, '$.platforms') WITH (id INT '$.platform.id') s
-    JOIN dbo.Plataforma p ON p.RawgId = s.id;
-
-    -- Desarrolladoras (solo vienen en el endpoint de detalle)
-    MERGE dbo.Desarrolladora AS t
-    USING (SELECT DISTINCT id, name, slug
-           FROM OPENJSON(@Json, '$.developers') WITH (id INT, name NVARCHAR(150), slug NVARCHAR(150))) AS s
-    ON t.RawgId = s.id
-    WHEN MATCHED AND t.Nombre <> s.name THEN UPDATE SET Nombre = s.name
-    WHEN NOT MATCHED THEN INSERT (RawgId, Nombre, Slug) VALUES (s.id, s.name, s.slug);
-
-    IF JSON_QUERY(@Json, '$.developers') IS NOT NULL
+    IF JSON_QUERY(@Json, '$.generos') IS NOT NULL
     BEGIN
+        MERGE dbo.Genero AS t
+        USING (SELECT id, MAX(nombre) AS nombre, MAX(slug) AS slug
+               FROM OPENJSON(@Json, '$.generos') WITH (id INT, nombre NVARCHAR(60), slug NVARCHAR(60))
+               GROUP BY id) AS s
+        ON t.SteamId = s.id
+        WHEN MATCHED AND t.Nombre <> s.nombre THEN UPDATE SET Nombre = s.nombre
+        WHEN NOT MATCHED THEN INSERT (SteamId, Nombre, Slug) VALUES (s.id, s.nombre, s.slug);
+
+        DELETE FROM dbo.JuegoGenero WHERE JuegoId = @JuegoId;
+        INSERT INTO dbo.JuegoGenero (JuegoId, GeneroId)
+        SELECT DISTINCT @JuegoId, g.GeneroId
+        FROM OPENJSON(@Json, '$.generos') WITH (id INT) s
+        JOIN dbo.Genero g ON g.SteamId = s.id;
+    END
+
+    IF JSON_QUERY(@Json, '$.plataformas') IS NOT NULL
+    BEGIN
+        MERGE dbo.Plataforma AS t
+        USING (SELECT slug, MAX(nombre) AS nombre
+               FROM OPENJSON(@Json, '$.plataformas') WITH (nombre NVARCHAR(60), slug NVARCHAR(60))
+               GROUP BY slug) AS s
+        ON t.Slug = s.slug
+        WHEN NOT MATCHED THEN INSERT (Nombre, Slug) VALUES (s.nombre, s.slug);
+
+        DELETE FROM dbo.JuegoPlataforma WHERE JuegoId = @JuegoId;
+        INSERT INTO dbo.JuegoPlataforma (JuegoId, PlataformaId)
+        SELECT DISTINCT @JuegoId, p.PlataformaId
+        FROM OPENJSON(@Json, '$.plataformas') WITH (slug NVARCHAR(60)) s
+        JOIN dbo.Plataforma p ON p.Slug = s.slug;
+    END
+
+    IF JSON_QUERY(@Json, '$.desarrolladoras') IS NOT NULL
+    BEGIN
+        MERGE dbo.Desarrolladora AS t
+        USING (SELECT slug, MAX(nombre) AS nombre
+               FROM OPENJSON(@Json, '$.desarrolladoras') WITH (nombre NVARCHAR(150), slug NVARCHAR(150))
+               GROUP BY slug) AS s
+        ON t.Slug = s.slug
+        WHEN NOT MATCHED THEN INSERT (Nombre, Slug) VALUES (s.nombre, s.slug);
+
         DELETE FROM dbo.JuegoDesarrolladora WHERE JuegoId = @JuegoId;
         INSERT INTO dbo.JuegoDesarrolladora (JuegoId, DesarrolladoraId)
         SELECT DISTINCT @JuegoId, d.DesarrolladoraId
-        FROM OPENJSON(@Json, '$.developers') WITH (id INT) s
-        JOIN dbo.Desarrolladora d ON d.RawgId = s.id;
+        FROM OPENJSON(@Json, '$.desarrolladoras') WITH (slug NVARCHAR(150)) s
+        JOIN dbo.Desarrolladora d ON d.Slug = s.slug;
     END
 
     COMMIT TRANSACTION;
@@ -331,10 +333,10 @@ BEGIN
     SET XACT_ABORT ON;
 
     IF @Puntuacion NOT BETWEEN 1 AND 5
-        THROW 50400, 'La puntuacion debe estar entre 1 y 5.', 1;
+        THROW 50400, N'La puntuación debe estar entre 1 y 5.', 1;
 
     IF NOT EXISTS (SELECT 1 FROM dbo.Juego WHERE JuegoId = @JuegoId)
-        THROW 50404, 'Juego no encontrado.', 1;
+        THROW 50404, N'Juego no encontrado.', 1;
 
     BEGIN TRANSACTION;
 
@@ -380,10 +382,10 @@ BEGIN
     SET NOCOUNT ON;
 
     IF NOT EXISTS (SELECT 1 FROM dbo.Juego WHERE JuegoId = @JuegoId)
-        THROW 50404, 'Juego no encontrado.', 1;
+        THROW 50404, N'Juego no encontrado.', 1;
 
     IF EXISTS (SELECT 1 FROM dbo.Resena WHERE UsuarioId = @UsuarioId AND JuegoId = @JuegoId)
-        THROW 50409, 'Ya publicaste una resena para este juego.', 1;
+        THROW 50409, N'Ya publicaste una reseña para este juego.', 1;
 
     INSERT INTO dbo.Resena (UsuarioId, JuegoId, Contenido)
     VALUES (@UsuarioId, @JuegoId, @Contenido);
@@ -401,12 +403,12 @@ AS
 BEGIN
     SET NOCOUNT ON;
 
-    DECLARE @Autor INT = (SELECT UsuarioId FROM dbo.Resena WHERE ResenaId = @ResenaId);
+    DECLARE @Autor INT = (SELECT UsuarioId FROM dbo.Resena WHERE ResenaId = @ResenaId AND Estado = 'V');
 
     IF @Autor IS NULL
-        THROW 50404, 'La resena no existe.', 1;
+        THROW 50404, N'La reseña no existe.', 1;
     IF @Autor <> @UsuarioId
-        THROW 50403, 'Solo el autor puede modificar la resena.', 1;
+        THROW 50403, N'Solo el autor puede modificar la reseña.', 1;
 
     UPDATE dbo.Resena
     SET Contenido = @Contenido, FechaModificacion = SYSUTCDATETIME()
@@ -424,12 +426,12 @@ AS
 BEGIN
     SET NOCOUNT ON;
 
-    DECLARE @Autor INT = (SELECT UsuarioId FROM dbo.Resena WHERE ResenaId = @ResenaId);
+    DECLARE @Autor INT = (SELECT UsuarioId FROM dbo.Resena WHERE ResenaId = @ResenaId AND Estado = 'V');
 
     IF @Autor IS NULL
-        THROW 50404, 'La resena no existe.', 1;
+        THROW 50404, N'La reseña no existe.', 1;
     IF @Autor <> @UsuarioId
-        THROW 50403, 'Solo el autor puede eliminar la resena.', 1;
+        THROW 50403, N'Solo el autor puede eliminar la reseña.', 1;
 
     DELETE FROM dbo.Resena WHERE ResenaId = @ResenaId;
 END
@@ -445,11 +447,11 @@ AS
 BEGIN
     SET NOCOUNT ON;
 
-    IF NOT EXISTS (SELECT 1 FROM dbo.Resena WHERE ResenaId = @ResenaId)
-        THROW 50404, 'La resena no existe.', 1;
+    IF NOT EXISTS (SELECT 1 FROM dbo.Resena WHERE ResenaId = @ResenaId AND Estado = 'V')
+        THROW 50404, N'La reseña no existe.', 1;
 
     IF EXISTS (SELECT 1 FROM dbo.ReporteResena WHERE ResenaId = @ResenaId AND UsuarioReportanteId = @UsuarioId)
-        THROW 50409, 'Ya reportaste esta resena.', 1;
+        THROW 50409, N'Ya reportaste esta reseña.', 1;
 
     INSERT INTO dbo.ReporteResena (ResenaId, UsuarioReportanteId, Motivo, Comentario)
     VALUES (@ResenaId, @UsuarioId, @Motivo, @Comentario);
@@ -470,10 +472,10 @@ BEGIN
     SET XACT_ABORT ON;
 
     IF NOT EXISTS (SELECT 1 FROM dbo.EstadoLista WHERE EstadoListaId = @EstadoListaId)
-        THROW 50400, 'Estado de lista no valido.', 1;
+        THROW 50400, N'Estado de lista no válido.', 1;
 
     IF NOT EXISTS (SELECT 1 FROM dbo.Juego WHERE JuegoId = @JuegoId)
-        THROW 50404, 'Juego no encontrado.', 1;
+        THROW 50404, N'Juego no encontrado.', 1;
 
     BEGIN TRANSACTION;
 
@@ -511,7 +513,7 @@ BEGIN
     SET NOCOUNT ON;
 
     IF NOT EXISTS (SELECT 1 FROM dbo.Usuario WHERE UsuarioId = @UsuarioId AND Bloqueado = 0)
-        THROW 50404, 'Perfil no disponible.', 1;
+        THROW 50404, N'Perfil no disponible.', 1;
 
     SELECT u.UsuarioId, u.NombreUsuario, u.AvatarUrl, u.FechaRegistro,
            (SELECT CAST(AVG(CAST(Puntuacion AS DECIMAL(4,2))) AS DECIMAL(3,2))
@@ -582,17 +584,17 @@ BEGIN
     SET XACT_ABORT ON;
 
     IF NOT EXISTS (SELECT 1 FROM dbo.Usuario WHERE UsuarioId = @AdminId AND RolId >= 2 AND Bloqueado = 0)
-        THROW 50403, 'Rol insuficiente.', 1;
+        THROW 50403, N'Rol insuficiente.', 1;
 
     IF @Accion NOT IN ('OCULTAR', 'MOSTRAR', 'ELIMINAR')
-        THROW 50400, 'Accion de moderacion no valida.', 1;
+        THROW 50400, N'Acción de moderación no válida.', 1;
 
     DECLARE @Detalle NVARCHAR(1000);
     SELECT @Detalle = CONCAT(N'Autor=', UsuarioId, N'; Juego=', JuegoId, N'; Texto=', LEFT(Contenido, 200))
     FROM dbo.Resena WHERE ResenaId = @ResenaId;
 
     IF @Detalle IS NULL
-        THROW 50404, 'La resena no existe.', 1;
+        THROW 50404, N'La reseña no existe.', 1;
 
     BEGIN TRANSACTION;
 
@@ -629,11 +631,11 @@ BEGIN
     DECLARE @RolObjetivo TINYINT = (SELECT RolId FROM dbo.Usuario WHERE UsuarioId = @UsuarioId);
 
     IF @RolAdmin IS NULL OR @RolAdmin < 2
-        THROW 50403, 'Rol insuficiente.', 1;
+        THROW 50403, N'Rol insuficiente.', 1;
     IF @RolObjetivo IS NULL
-        THROW 50404, 'Usuario no encontrado.', 1;
+        THROW 50404, N'Usuario no encontrado.', 1;
     IF @AdminId = @UsuarioId OR @RolObjetivo >= @RolAdmin
-        THROW 50403, 'No puede bloquear a un usuario con rol igual o superior.', 1;
+        THROW 50403, N'No puede bloquear a un usuario con rol igual o superior.', 1;
 
     BEGIN TRANSACTION;
 
@@ -663,15 +665,15 @@ BEGIN
     SET XACT_ABORT ON;
 
     IF NOT EXISTS (SELECT 1 FROM dbo.Usuario WHERE UsuarioId = @SuperAdminId AND RolId = 3 AND Bloqueado = 0)
-        THROW 50403, 'Rol insuficiente.', 1;
+        THROW 50403, N'Rol insuficiente.', 1;
     IF NOT EXISTS (SELECT 1 FROM dbo.Rol WHERE RolId = @RolId)
-        THROW 50400, 'El rol indicado no existe.', 1;
+        THROW 50400, N'El rol indicado no existe.', 1;
     IF @SuperAdminId = @UsuarioId AND @RolId <> 3
-        THROW 50400, 'No puede revocarse su propio rol de Super Administrador.', 1;
+        THROW 50400, N'No puede revocarse su propio rol de Super Administrador.', 1;
 
     DECLARE @RolAnterior TINYINT = (SELECT RolId FROM dbo.Usuario WHERE UsuarioId = @UsuarioId);
     IF @RolAnterior IS NULL
-        THROW 50404, 'Usuario no encontrado.', 1;
+        THROW 50404, N'Usuario no encontrado.', 1;
 
     BEGIN TRANSACTION;
 
@@ -695,7 +697,7 @@ BEGIN
 
     IF EXISTS (SELECT 1 FROM dbo.Auditoria WHERE UsuarioActorId = @UsuarioId)
        OR EXISTS (SELECT 1 FROM dbo.Respaldo WHERE UsuarioId = @UsuarioId)
-        THROW 50409, 'La cuenta tiene registros de auditoria; quite primero su rol administrativo.', 1;
+        THROW 50409, N'La cuenta tiene registros de auditoría; quite primero su rol administrativo.', 1;
 
     BEGIN TRANSACTION;
 
@@ -703,6 +705,365 @@ BEGIN
     DELETE FROM dbo.ReporteResena WHERE UsuarioReportanteId = @UsuarioId;
     -- Sesion, Calificacion, Resena (y sus reportes) y BibliotecaUsuario se borran en cascada
     DELETE FROM dbo.Usuario WHERE UsuarioId = @UsuarioId;
+
+    COMMIT TRANSACTION;
+END
+GO
+
+CREATE OR ALTER PROCEDURE dbo.sp_ListarGeneros
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    SELECT GeneroId AS Id, Nombre, Slug
+    FROM dbo.Genero
+    ORDER BY Nombre;
+END
+GO
+
+CREATE OR ALTER PROCEDURE dbo.sp_ListarPlataformas
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    SELECT PlataformaId AS Id, Nombre, Slug
+    FROM dbo.Plataforma
+    ORDER BY Nombre;
+END
+GO
+
+CREATE OR ALTER PROCEDURE dbo.sp_IniciarSincronizacion
+    @Origen             VARCHAR(20),
+    @ParametrosConsulta NVARCHAR(500) = NULL
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    INSERT INTO dbo.SincronizacionApi (Origen, ParametrosConsulta)
+    VALUES (@Origen, @ParametrosConsulta);
+
+    SELECT CAST(SCOPE_IDENTITY() AS INT) AS SincronizacionId;
+END
+GO
+
+CREATE OR ALTER PROCEDURE dbo.sp_FinalizarSincronizacion
+    @SincronizacionId INT,
+    @Estado           VARCHAR(15),
+    @Insertados       INT,
+    @Actualizados     INT,
+    @ConError         INT,
+    @Reintentos       TINYINT,
+    @MensajeError     NVARCHAR(1000) = NULL
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    UPDATE dbo.SincronizacionApi
+    SET FechaFin = SYSUTCDATETIME(),
+        Estado = @Estado,
+        RegistrosInsertados = @Insertados,
+        RegistrosActualizados = @Actualizados,
+        RegistrosConError = @ConError,
+        Reintentos = @Reintentos,
+        MensajeError = @MensajeError
+    WHERE SincronizacionId = @SincronizacionId;
+END
+GO
+
+CREATE OR ALTER PROCEDURE dbo.sp_ListarEstadosLista
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    SELECT EstadoListaId, Nombre
+    FROM dbo.EstadoLista
+    ORDER BY EstadoListaId;
+END
+GO
+
+CREATE OR ALTER PROCEDURE dbo.sp_ObtenerEstadoUsuarioJuego
+    @UsuarioId INT,
+    @JuegoId   INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    IF NOT EXISTS (SELECT 1 FROM dbo.Juego WHERE JuegoId = @JuegoId)
+        THROW 50404, N'Juego no encontrado.', 1;
+
+    SELECT
+        (SELECT Puntuacion FROM dbo.Calificacion WHERE UsuarioId = @UsuarioId AND JuegoId = @JuegoId) AS Puntuacion,
+        (SELECT EstadoListaId FROM dbo.BibliotecaUsuario WHERE UsuarioId = @UsuarioId AND JuegoId = @JuegoId) AS EstadoListaId,
+        (SELECT ResenaId FROM dbo.Resena WHERE UsuarioId = @UsuarioId AND JuegoId = @JuegoId AND Estado = 'V') AS ResenaId,
+        (SELECT Contenido FROM dbo.Resena WHERE UsuarioId = @UsuarioId AND JuegoId = @JuegoId AND Estado = 'V') AS ResenaContenido;
+END
+GO
+
+CREATE OR ALTER PROCEDURE dbo.sp_ListarBiblioteca
+    @UsuarioId     INT,
+    @EstadoListaId TINYINT = NULL
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    IF NOT EXISTS (SELECT 1 FROM dbo.Usuario WHERE UsuarioId = @UsuarioId AND Bloqueado = 0)
+        THROW 50404, N'Perfil no disponible.', 1;
+
+    SELECT b.JuegoId, j.Titulo, j.PortadaUrl, b.EstadoListaId, e.Nombre AS Estado,
+           COALESCE(b.FechaModificacion, b.FechaAgregado) AS Fecha
+    FROM dbo.BibliotecaUsuario b
+    JOIN dbo.Juego j ON j.JuegoId = b.JuegoId
+    JOIN dbo.EstadoLista e ON e.EstadoListaId = b.EstadoListaId
+    WHERE b.UsuarioId = @UsuarioId
+      AND (@EstadoListaId IS NULL OR b.EstadoListaId = @EstadoListaId)
+    ORDER BY Fecha DESC, j.Titulo;
+END
+GO
+
+CREATE OR ALTER PROCEDURE dbo.sp_ListarModeracion
+    @Filtro        VARCHAR(12),
+    @Pagina        INT,
+    @TamanioPagina INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    SELECT r.ResenaId, r.JuegoId, j.Titulo, r.UsuarioId, u.NombreUsuario,
+           u.Bloqueado AS AutorBloqueado, r.Contenido, r.Estado, r.FechaPublicacion,
+           p.CantidadReportes, p.UltimoReporte, p.Motivos,
+           COUNT(*) OVER () AS Total
+    FROM dbo.Resena r
+    JOIN dbo.Usuario u ON u.UsuarioId = r.UsuarioId
+    JOIN dbo.Juego j ON j.JuegoId = r.JuegoId
+    OUTER APPLY (
+        SELECT COUNT(*) AS CantidadReportes,
+               MAX(rr.FechaReporte) AS UltimoReporte,
+               STRING_AGG(rr.Motivo, ', ') AS Motivos
+        FROM dbo.ReporteResena rr
+        WHERE rr.ResenaId = r.ResenaId AND rr.Resuelto = 0
+    ) p
+    WHERE @Filtro = 'RECIENTES'
+       OR (@Filtro = 'REPORTADAS' AND p.CantidadReportes > 0)
+       OR (@Filtro = 'OCULTAS' AND r.Estado = 'O')
+    ORDER BY
+        CASE WHEN @Filtro = 'REPORTADAS' THEN p.CantidadReportes END DESC,
+        r.FechaPublicacion DESC,
+        r.ResenaId DESC
+    OFFSET (@Pagina - 1) * @TamanioPagina ROWS
+    FETCH NEXT @TamanioPagina ROWS ONLY;
+END
+GO
+
+CREATE OR ALTER PROCEDURE dbo.sp_ListarUsuarios
+    @Texto          NVARCHAR(100) = NULL,
+    @SoloBloqueados BIT = 0,
+    @Pagina         INT,
+    @TamanioPagina  INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    SELECT u.UsuarioId, u.NombreUsuario, u.Email, u.RolId, u.Bloqueado, u.FechaRegistro, u.UltimoLogin,
+           COUNT(*) OVER () AS Total
+    FROM dbo.Usuario u
+    WHERE (@SoloBloqueados = 0 OR u.Bloqueado = 1)
+      AND (@Texto IS NULL
+           OR u.NombreUsuario LIKE N'%' + @Texto + N'%'
+           OR u.Email LIKE N'%' + @Texto + N'%')
+    ORDER BY u.NombreUsuario
+    OFFSET (@Pagina - 1) * @TamanioPagina ROWS
+    FETCH NEXT @TamanioPagina ROWS ONLY;
+END
+GO
+
+CREATE OR ALTER PROCEDURE dbo.sp_ListarRoles
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    SELECT RolId, Nombre, Descripcion
+    FROM dbo.Rol
+    ORDER BY RolId;
+END
+GO
+
+CREATE OR ALTER PROCEDURE dbo.sp_ListarAuditoria
+    @Pagina        INT,
+    @TamanioPagina INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    SELECT a.AuditoriaId, a.UsuarioActorId, u.NombreUsuario AS Actor, a.Accion, a.EntidadTipo,
+           a.EntidadId, a.Motivo, a.Detalle, a.Fecha,
+           COUNT(*) OVER () AS Total
+    FROM dbo.Auditoria a
+    JOIN dbo.Usuario u ON u.UsuarioId = a.UsuarioActorId
+    ORDER BY a.Fecha DESC, a.AuditoriaId DESC
+    OFFSET (@Pagina - 1) * @TamanioPagina ROWS
+    FETCH NEXT @TamanioPagina ROWS ONLY;
+END
+GO
+
+CREATE OR ALTER PROCEDURE dbo.sp_ObtenerPasswordHash
+    @UsuarioId INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    SELECT PasswordHash
+    FROM dbo.Usuario
+    WHERE UsuarioId = @UsuarioId;
+END
+GO
+
+CREATE OR ALTER PROCEDURE dbo.sp_IniciarRespaldo
+    @UsuarioId   INT,
+    @Tipo        VARCHAR(15),
+    @Formato     VARCHAR(5),
+    @RutaArchivo NVARCHAR(500)
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    DECLARE @Responsable INT = COALESCE(
+        (SELECT UsuarioId FROM dbo.Usuario WHERE UsuarioId = @UsuarioId),
+        (SELECT TOP 1 UsuarioId FROM dbo.Usuario WHERE RolId = 3 ORDER BY UsuarioId));
+
+    INSERT INTO dbo.Respaldo (UsuarioId, Tipo, Formato, RutaArchivo)
+    VALUES (@Responsable, @Tipo, @Formato, @RutaArchivo);
+
+    SELECT CAST(SCOPE_IDENTITY() AS INT) AS RespaldoId;
+END
+GO
+
+CREATE OR ALTER PROCEDURE dbo.sp_EjecutarBackup
+    @Tipo VARCHAR(15),
+    @Ruta NVARCHAR(500)
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    DECLARE @Base SYSNAME = DB_NAME();
+
+    IF @Tipo = 'COMPLETO'
+        BACKUP DATABASE @Base TO DISK = @Ruta WITH INIT, CHECKSUM;
+    ELSE IF @Tipo = 'DIFERENCIAL'
+        BACKUP DATABASE @Base TO DISK = @Ruta WITH DIFFERENTIAL, INIT, CHECKSUM;
+    ELSE IF @Tipo = 'LOG'
+        BACKUP LOG @Base TO DISK = @Ruta WITH INIT, CHECKSUM;
+    ELSE
+        THROW 50400, N'El tipo de respaldo no es válido.', 1;
+END
+GO
+
+CREATE OR ALTER PROCEDURE dbo.sp_FinalizarRespaldo
+    @RespaldoId     INT,
+    @Estado         VARCHAR(15),
+    @TamanioBytes   BIGINT = NULL,
+    @ChecksumSha256 CHAR(64) = NULL,
+    @MensajeError   NVARCHAR(1000) = NULL
+AS
+BEGIN
+    SET NOCOUNT ON;
+    SET XACT_ABORT ON;
+
+    BEGIN TRANSACTION;
+
+    UPDATE dbo.Respaldo
+    SET Estado = @Estado,
+        TamanioBytes = @TamanioBytes,
+        ChecksumSha256 = @ChecksumSha256,
+        MensajeError = @MensajeError,
+        FechaFin = SYSUTCDATETIME()
+    WHERE RespaldoId = @RespaldoId;
+
+    IF @Estado = 'OK'
+        INSERT INTO dbo.Auditoria (UsuarioActorId, Accion, EntidadTipo, EntidadId, Detalle)
+        SELECT UsuarioId, 'GENERAR_RESPALDO', 'RESPALDO', RespaldoId, CONCAT(N'Tipo=', Tipo, N'; Formato=', Formato)
+        FROM dbo.Respaldo
+        WHERE RespaldoId = @RespaldoId;
+
+    COMMIT TRANSACTION;
+END
+GO
+
+CREATE OR ALTER PROCEDURE dbo.sp_ListarRespaldos
+    @Pagina        INT,
+    @TamanioPagina INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    SELECT r.RespaldoId, r.UsuarioId, u.NombreUsuario, r.Tipo, r.Formato, r.RutaArchivo, r.TamanioBytes,
+           r.ChecksumSha256, r.Estado, r.FechaInicio, r.FechaFin, r.MensajeError,
+           COUNT(*) OVER () AS Total
+    FROM dbo.Respaldo r
+    JOIN dbo.Usuario u ON u.UsuarioId = r.UsuarioId
+    ORDER BY r.RespaldoId DESC
+    OFFSET (@Pagina - 1) * @TamanioPagina ROWS
+    FETCH NEXT @TamanioPagina ROWS ONLY;
+END
+GO
+
+CREATE OR ALTER PROCEDURE dbo.sp_ReponerRespaldo
+    @RespaldoId     INT,
+    @UsuarioId      INT,
+    @Tipo           VARCHAR(15),
+    @Formato        VARCHAR(5),
+    @RutaArchivo    NVARCHAR(500),
+    @TamanioBytes   BIGINT = NULL,
+    @ChecksumSha256 CHAR(64) = NULL,
+    @Estado         VARCHAR(15),
+    @FechaInicio    DATETIME2(0),
+    @FechaFin       DATETIME2(0) = NULL,
+    @MensajeError   NVARCHAR(1000) = NULL
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    DECLARE @Responsable INT = COALESCE(
+        (SELECT UsuarioId FROM dbo.Usuario WHERE UsuarioId = @UsuarioId),
+        (SELECT TOP 1 UsuarioId FROM dbo.Usuario WHERE RolId = 3 ORDER BY UsuarioId));
+
+    IF EXISTS (SELECT 1 FROM dbo.Respaldo WHERE RespaldoId = @RespaldoId)
+        UPDATE dbo.Respaldo
+        SET UsuarioId = @Responsable, Tipo = @Tipo, Formato = @Formato, RutaArchivo = @RutaArchivo,
+            TamanioBytes = @TamanioBytes, ChecksumSha256 = @ChecksumSha256, Estado = @Estado,
+            FechaInicio = @FechaInicio, FechaFin = @FechaFin, MensajeError = @MensajeError
+        WHERE RespaldoId = @RespaldoId;
+    ELSE
+    BEGIN
+        SET IDENTITY_INSERT dbo.Respaldo ON;
+
+        INSERT INTO dbo.Respaldo (RespaldoId, UsuarioId, Tipo, Formato, RutaArchivo, TamanioBytes, ChecksumSha256,
+                                  Estado, FechaInicio, FechaFin, MensajeError)
+        VALUES (@RespaldoId, @Responsable, @Tipo, @Formato, @RutaArchivo, @TamanioBytes, @ChecksumSha256,
+                @Estado, @FechaInicio, @FechaFin, @MensajeError);
+
+        SET IDENTITY_INSERT dbo.Respaldo OFF;
+    END
+END
+GO
+
+CREATE OR ALTER PROCEDURE dbo.sp_RegistrarRestauracion
+    @UsuarioId  INT,
+    @RespaldoId INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+    SET XACT_ABORT ON;
+
+    DECLARE @Responsable INT = COALESCE(
+        (SELECT UsuarioId FROM dbo.Usuario WHERE UsuarioId = @UsuarioId),
+        (SELECT TOP 1 UsuarioId FROM dbo.Usuario WHERE RolId = 3 ORDER BY UsuarioId));
+
+    BEGIN TRANSACTION;
+
+    UPDATE dbo.Respaldo SET Estado = 'RESTAURADO' WHERE RespaldoId = @RespaldoId;
+
+    INSERT INTO dbo.Auditoria (UsuarioActorId, Accion, EntidadTipo, EntidadId, Detalle)
+    VALUES (@Responsable, 'RESTAURAR_RESPALDO', 'RESPALDO', @RespaldoId, CONCAT(N'SolicitadoPor=', @UsuarioId));
 
     COMMIT TRANSACTION;
 END
