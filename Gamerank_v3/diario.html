@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Tu diario en GameRank: resumen de tus reseñas, puntajes y lista de juegos.">
+  <title>Diario · GameRank</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Source+Sans+3:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <header class="site-header">
+    <div class="container">
+      <a class="logo" href="index.html">Game<span>Rank</span></a>
+      <button class="nav-toggle" aria-expanded="false" aria-controls="nav">Menú</button>
+      <nav class="nav" id="nav" aria-label="Principal">
+        <a href="index.html">Juegos</a>
+        <a href="reviews.html">Reviews</a>
+        <a href="wishlist.html">Mi Lista</a>
+        <a href="diario.html" aria-current="page">Diario</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container">
+    <div class="profile-head">
+      <div class="avatar" aria-hidden="true">G</div>
+      <div><h1>Mi diario</h1><p class="meta" style="margin:0">Resumen de tus reseñas y tu actividad</p></div>
+    </div>
+
+    <section class="stats" id="stats" aria-label="Estadísticas"></section>
+
+    <div class="layout-2col">
+      <section class="panel" aria-labelledby="t-dist">
+        <h2 id="t-dist">Tus puntuaciones</h2>
+        <div id="dist"></div>
+      </section>
+
+      <section aria-labelledby="t-diario">
+        <div class="list-head">
+          <h2 id="t-diario">Entradas</h2>
+          <label class="sr-only" for="orden">Ordenar</label>
+          <select id="orden">
+            <option value="recientes">Más recientes</option>
+            <option value="mejor">Mejor puntuados</option>
+            <option value="peor">Peor puntuados</option>
+          </select>
+        </div>
+        <div id="entradas" aria-live="polite"></div>
+      </section>
+    </div>
+
+    <section class="profile-list" aria-labelledby="t-lista">
+      <div class="list-head">
+        <h2 id="t-lista">Juegos en su lista</h2>
+        <a href="wishlist.html">Administrar mi lista</a>
+      </div>
+      <div class="tabs" id="tabs-lista" role="group" aria-label="Filtrar lista por estado"></div>
+      <div id="lista-perfil" class="grid compact" aria-live="polite"></div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      <p>Datos de videojuegos provistos por <a href="https://rawg.io" target="_blank" rel="noopener">RAWG</a>.</p>
+      <p class="privacy">Aviso de privacidad (Ley 25.326): los datos que ingreses se usan solo para gestionar tus reseñas y tu lista de juegos. Podés acceder, rectificar o suprimir tus datos escribiendo a privacidad@gamerank.example. La AAIP es el órgano de control de la ley.</p>
+    </div>
+  </footer>
+
+  <script src="js/demo-data.js"></script>
+  <script src="js/app.js"></script>
+  <script>
+    const mesDe = iso => new Date(iso).toLocaleDateString('es-AR', { month: 'long', year: 'numeric' });
+
+    function pintarStats(reseñas, lista) {
+      const prom = reseñas.length ? (reseñas.reduce((s, r) => s + r.puntaje, 0) / reseñas.length).toFixed(1) : '–';
+      const datos = [
+        [reseñas.length, 'Reseñas'],
+        [prom, 'Puntaje promedio'],
+        [reseñas.filter(r => r.estado === 'Jugado').length, 'Juegos jugados'],
+        [lista.length, 'En mi lista']
+      ];
+      $('#stats').replaceChildren(...datos.map(([n, t]) => el('div', { class: 'stat' }, el('strong', {}, String(n)), el('span', {}, t))));
+    }
+
+    function pintarDistribucion(reseñas) {
+      const filas = [5, 4, 3, 2, 1].map(n => {
+        const c = reseñas.filter(r => r.puntaje === n).length;
+        const pct = reseñas.length ? (c / reseñas.length) * 100 : 0;
+        const barra = el('div', { class: 'dist-bar', role: 'img', 'aria-label': `${c} reseñas de ${n} estrellas` }, el('i', { style: `width:${pct}%` }));
+        return el('div', { class: 'dist-row' }, el('span', { class: 'stars' }, `${n}★`), barra, el('span', {}, String(c)));
+      });
+      $('#dist').replaceChildren(...filas);
+    }
+
+    function ordenar(lista, modo) {
+      const l = [...lista];
+      if (modo === 'mejor') return l.sort((a, b) => b.puntaje - a.puntaje || b.fecha.localeCompare(a.fecha));
+      if (modo === 'peor') return l.sort((a, b) => a.puntaje - b.puntaje || b.fecha.localeCompare(a.fecha));
+      return l.sort((a, b) => b.fecha.localeCompare(a.fecha));
+    }
+
+    /* Lista del perfil (solo lectura: así mismo se mostrará el perfil de otros usuarios) */
+    let filtroLista = 'Todos';
+    function pintarLista(lista) {
+      const cont = $('#lista-perfil');
+      const opciones = ['Todos', ...ESTADOS_LISTA];
+      $('#tabs-lista').replaceChildren(...opciones.map(est => {
+        const n = est === 'Todos' ? lista.length : lista.filter(x => x.estado === est).length;
+        return el('button', { class: 'tab', type: 'button', 'aria-pressed': String(est === filtroLista),
+          onclick: () => { filtroLista = est; pintarLista(lista); } }, `${est} (${n})`);
+      }));
+      if (!lista.length) return showStatus(cont, 'No hay juegos en la lista todavía.');
+      const items = filtroLista === 'Todos' ? lista : lista.filter(x => x.estado === filtroLista);
+      if (!items.length) return showStatus(cont, `No hay juegos en “${filtroLista}”.`);
+      cont.replaceChildren(...items.map(g => {
+        const generos = (g.genres || []).slice(0, 2).join(', ') || 'Sin género';
+        const anio = g.released ? g.released.slice(0, 4) : 's/f';
+        return el('article', { class: 'card' },
+          el('img', { src: g.background_image || '', alt: `Portada de ${g.name}`, loading: 'lazy' }),
+          el('div', { class: 'card-body' },
+            el('h3', {}, g.name),
+            el('p', { class: 'meta' }, `${generos} · ${anio}`),
+            el('span', { class: 'badge', 'data-estado': g.estado }, g.estado)));
+      }));
+    }
+
+    async function render() {
+      const reseñas = await ReviewStore.all(), lista = await WishlistStore.all();
+      pintarStats(reseñas, lista);
+      pintarDistribucion(reseñas);
+      pintarLista(lista);
+
+      const cont = $('#entradas');
+      if (!reseñas.length) {
+        showStatus(cont, '');
+        cont.firstChild.replaceChildren('Todavía no escribiste reseñas. ', el('a', { href: 'reviews.html' }, 'Escribí la primera'), '.');
+        return;
+      }
+      const modo = $('#orden').value, ordenadas = ordenar(reseñas, modo);
+      const nodos = []; let mesActual = '';
+      for (const r of ordenadas) {
+        if (modo === 'recientes' && mesDe(r.fecha) !== mesActual) {      // títulos de mes solo en orden cronológico
+          mesActual = mesDe(r.fecha); nodos.push(el('h3', { class: 'month' }, mesActual));
+        }
+        nodos.push(el('article', { class: 'entry' },
+          el('div', { class: 'day', 'aria-hidden': 'true' }, String(new Date(r.fecha).getDate())),
+          el('div', {},
+            el('h3', {}, r.juego),
+            el('p', { class: 'meta' }, `${r.estado} · ${new Date(r.fecha).toLocaleDateString('es-AR')}`),
+            el('p', {}, r.texto)),
+          el('span', { class: 'stars', role: 'img', 'aria-label': `${r.puntaje} de 5 estrellas` }, stars(r.puntaje))));
+      }
+      cont.replaceChildren(...nodos);
+    }
+    $('#orden').addEventListener('change', render);
+    render();
+  </script>
+</body>
+</html>
