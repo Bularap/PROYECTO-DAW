@@ -1,0 +1,27 @@
+[hidden] { display: none !important; }
+.site-header .container { flex-wrap: wrap; }
+.nav { align-items: center; flex-wrap: wrap; }
+.auth-nav { display: flex; align-items: center; gap: .25rem; flex-wrap: wrap; }
+.session-user { color: var(--gold); padding: .5rem .9rem; overflow-wrap: anywhere; max-width: 16rem; }
+.auth-nav .btn { padding: .5rem .9rem; }
+.session-status { color: var(--gold); padding-block: .75rem; margin-block: 0; overflow-wrap: anywhere; }
+.auth-main { min-height: 70vh; padding-block: clamp(2rem, 6vw, 4rem); }
+.auth-panel { width: min(100%, 480px); margin-inline: auto; padding: clamp(1.25rem, 4vw, 2rem); }
+.auth-panel h1 { margin: 0 0 .5rem; font-size: clamp(1.5rem, 5vw, 2rem); }
+.auth-intro { color: var(--muted); margin: 0 0 1.5rem; }
+.auth-panel input[type="password"] { background: var(--surface); color: var(--text); border: 1px solid var(--line); border-radius: var(--radius); padding: .6rem .8rem; width: 100%; }
+.auth-panel [aria-invalid="true"] { border-color: var(--error); }
+.auth-panel .check { display: flex; font-weight: 400; }
+.auth-panel .check input { flex-shrink: 0; accent-color: var(--gold); }
+.auth-panel .btn { width: 100%; }
+.auth-panel .field-error:empty { display: none; }
+.auth-panel .meta { margin-top: .35rem; }
+.auth-switch { text-align: center; margin: 1.25rem 0 0; }
+.auth-form-status { color: var(--error); overflow-wrap: anywhere; margin: 0 0 1rem; }
+.auth-form-status:empty { display: none; }
+@media (max-width: 640px) {
+  .nav { align-items: stretch; }
+  .auth-nav { align-items: stretch; flex-direction: column; border-top: 1px solid var(--line); margin-top: .25rem; padding-top: .5rem; }
+  .session-user { max-width: none; }
+  .auth-nav .btn { text-align: left; }
+}

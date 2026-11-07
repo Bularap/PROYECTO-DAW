@@ -7,6 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Source+Sans+3:wght@400;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="css/auth.css">
 </head>
 <body>
   <header class="site-header">
@@ -18,9 +19,14 @@
         <a href="reviews.html" aria-current="page">Reviews</a>
         <a href="wishlist.html">Mi Lista</a>
         <a href="diario.html">Diario</a>
+        <div class="auth-nav" id="auth-nav">
+          <a href="login.html">Ingresar</a>
+          <a href="register.html">Crear cuenta</a>
+        </div>
       </nav>
     </div>
   </header>
+  <p class="container session-status" id="session-status" role="status" hidden></p>
 
   <main class="container layout-2col">
     <section class="panel" aria-labelledby="t-form">
@@ -87,6 +93,7 @@
 
   <script src="js/demo-data.js"></script>
   <script src="js/app.js"></script>
+  <script src="js/auth.js"></script>
   <script>
     const form = $('#form-review'), lista = $('#lista');
     let juegoId = null;
