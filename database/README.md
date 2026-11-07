@@ -12,7 +12,7 @@ Modelo relacional de GAME RANK sobre **Microsoft SQL Server 2019+**.
 | `01_create_database.sql` | Crea la base `GameRank` (recovery FULL para backups de log) |
 | `02_tables.sql` | 18 tablas con PK, FK, UNIQUE, CHECK, DEFAULT e índices |
 | `03_views.sql` | `vw_JuegoMetricas`, `vw_FeedResenas`, `vw_ResenasReportadas` |
-| `04_procedures.sql` | Procedimientos por módulo (M01–M07), uno o más por caso de uso |
+| `04_procedures.sql` | Procedimientos por módulo (M01–M08), uno o más por caso de uso. Se guarda en UTF-8 con BOM para conservar los acentos de los mensajes |
 | `05_seed.sql` | Roles, estados de lista, catálogo de ejemplo con ids reales de RAWG, usuarios y actividad de prueba |
 | `06_carga_masiva.sql` | Opcional: simulación de volumen (50k juegos, 20k usuarios, ~1M calificaciones, 100k reseñas) |
 
@@ -20,6 +20,8 @@ Modelo relacional de GAME RANK sobre **Microsoft SQL Server 2019+**.
 cd database
 sqlcmd -S "(localdb)\MSSQLLocalDB" -b -i 00_run_all.sql
 ```
+
+Con una instancia local de SQL Server en lugar de LocalDB, usar `-S "."` y agregar `-E`.
 
 En SSMS: abrir `00_run_all.sql` y activar *Query > SQLCMD Mode*. Para la carga masiva, descomentar la última línea o ejecutar `06_carga_masiva.sql` aparte (tarda unos 30 s).
 
@@ -45,7 +47,11 @@ En SSMS: abrir `00_run_all.sql` y activar *Query > SQLCMD Mode*. Para la carga m
 
 ## Rendimiento (con `06_carga_masiva.sql`)
 
-`sp_BuscarCatalogo` con texto, dos géneros, puntuación mínima y orden por promedio, sobre 50k juegos y ~1M calificaciones: **~0,5 s** en LocalDB, dentro del límite de 2 s del RNF de rendimiento.
+Medido a través de la API sobre 50k juegos, 20k usuarios, ~1M calificaciones y 100k reseñas, con SQL Server local y la API en modo Debug, sin contar la primera ejecución de cada consulta:
+
+- Búsqueda con texto, dos géneros, plataforma, puntuación mínima y orden por promedio: **91 ms**.
+- Catálogo sin filtros: **509 ms**.
+- Consulta más lenta (reseñas recientes en moderación): **664 ms**, dentro del límite de 2 s del RNF de rendimiento.
 
 ## Usuarios de prueba
 
