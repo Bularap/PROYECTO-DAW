@@ -72,9 +72,9 @@
         body.nombreUsuario = form.elements.nombreUsuario.value.trim();
         body.aceptaPrivacidad = form.elements.aceptaPrivacidad.checked;
       }
-      const data = await GameRankAuth.request(isRegister ? 'registro' : 'login', { body });
-      GameRankAuth.startSession(data);
+      await (isRegister ? GameRankAuth.register(body) : GameRankAuth.login(body));
       form.reset();
+      location.replace('index.html');
     } catch (error) {
       status.textContent = error.message;
       status.focus();

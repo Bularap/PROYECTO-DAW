@@ -49,13 +49,14 @@ public class UsuarioDAL
         });
     }
 
-    public Task CrearSesion(int usuarioId, string tokenHash, string? ip)
+    public Task CrearSesion(int usuarioId, string tokenHash, string passwordHashEsperado, string? ip)
     {
         return _datos.Ejecutar(async conexion =>
         {
             await using var comando = AccesoDatos.Procedimiento(conexion, "dbo.sp_CrearSesion");
             comando.Parameters.AddWithValue("@UsuarioId", usuarioId);
             comando.Parameters.AddWithValue("@TokenHash", tokenHash);
+            comando.Parameters.AddWithValue("@PasswordHashEsperado", passwordHashEsperado);
             comando.Parameters.AddWithValue("@IpOrigen", (object?)ip ?? DBNull.Value);
             return await comando.ExecuteNonQueryAsync();
         });
@@ -99,6 +100,49 @@ public class UsuarioDAL
         {
             await using var comando = AccesoDatos.Procedimiento(conexion, "dbo.sp_EliminarUsuario");
             comando.Parameters.AddWithValue("@UsuarioId", usuarioId);
+            return await comando.ExecuteNonQueryAsync();
+        });
+    }
+
+    public Task<Cuenta> ObtenerCuenta(int usuarioId)
+    {
+        return _datos.Ejecutar(async conexion =>
+        {
+            await using var comando = AccesoDatos.Procedimiento(conexion, "dbo.sp_ObtenerCuenta");
+            comando.Parameters.AddWithValue("@UsuarioId", usuarioId);
+            await using var lector = await comando.ExecuteReaderAsync();
+            if (!await lector.ReadAsync())
+                throw new GameRank.Services.AppException(401, "La cuenta ya no está disponible.");
+            return new Cuenta
+            {
+                UsuarioId = lector.GetInt32(lector.GetOrdinal("UsuarioId")),
+                NombreUsuario = lector.GetString(lector.GetOrdinal("NombreUsuario")),
+                Email = lector.GetString(lector.GetOrdinal("Email")),
+                AvatarUrl = lector.IsDBNull(lector.GetOrdinal("AvatarUrl")) ? null : lector.GetString(lector.GetOrdinal("AvatarUrl"))
+            };
+        });
+    }
+
+    public Task ActualizarPerfil(int usuarioId, string nombreUsuario, string? avatarUrl)
+    {
+        return _datos.Ejecutar(async conexion =>
+        {
+            await using var comando = AccesoDatos.Procedimiento(conexion, "dbo.sp_ActualizarPerfil");
+            comando.Parameters.AddWithValue("@UsuarioId", usuarioId);
+            comando.Parameters.AddWithValue("@NombreUsuario", nombreUsuario);
+            comando.Parameters.AddWithValue("@AvatarUrl", (object?)avatarUrl ?? DBNull.Value);
+            return await comando.ExecuteNonQueryAsync();
+        });
+    }
+
+    public Task CambiarPassword(int usuarioId, string passwordHashEsperado, string passwordHashNuevo)
+    {
+        return _datos.Ejecutar(async conexion =>
+        {
+            await using var comando = AccesoDatos.Procedimiento(conexion, "dbo.sp_CambiarPassword");
+            comando.Parameters.AddWithValue("@UsuarioId", usuarioId);
+            comando.Parameters.AddWithValue("@PasswordHashEsperado", passwordHashEsperado);
+            comando.Parameters.AddWithValue("@PasswordHashNuevo", passwordHashNuevo);
             return await comando.ExecuteNonQueryAsync();
         });
     }

@@ -1,4 +1,4 @@
-﻿/* =============================================================================
+/* =============================================================================
    GAME RANK - Script 04: Procedimientos almacenados
 
    Convencion de errores (THROW): el numero de error es 50000 + codigo HTTP que el
@@ -59,21 +59,35 @@ GO
 
 -- CU02: se llama luego de verificar el hash. Guarda el SHA-256 del token, no el token.
 CREATE OR ALTER PROCEDURE dbo.sp_CrearSesion
-    @UsuarioId    INT,
-    @TokenHash    CHAR(64),
-    @MinutosVida  INT = 1440,
-    @IpOrigen     VARCHAR(45) = NULL
+    @UsuarioId INT,
+    @TokenHash CHAR(64),
+    @PasswordHashEsperado NVARCHAR(255),
+    @MinutosVida INT = 1440,
+    @IpOrigen VARCHAR(45) = NULL
 AS
 BEGIN
     SET NOCOUNT ON;
-
-    IF EXISTS (SELECT 1 FROM dbo.Usuario WHERE UsuarioId = @UsuarioId AND Bloqueado = 1)
-        THROW 50403, N'La cuenta se encuentra suspendida.', 1;
-
-    INSERT INTO dbo.Sesion (UsuarioId, TokenHash, FechaExpiracion, IpOrigen)
-    VALUES (@UsuarioId, @TokenHash, DATEADD(MINUTE, @MinutosVida, SYSUTCDATETIME()), @IpOrigen);
-
-    UPDATE dbo.Usuario SET UltimoLogin = SYSUTCDATETIME() WHERE UsuarioId = @UsuarioId;
+    SET XACT_ABORT ON;
+    BEGIN TRY
+        BEGIN TRANSACTION;
+        DECLARE @HashActual NVARCHAR(255), @Bloqueado BIT;
+        SELECT @HashActual = PasswordHash, @Bloqueado = Bloqueado
+        FROM dbo.Usuario WITH (UPDLOCK, HOLDLOCK)
+        WHERE UsuarioId = @UsuarioId;
+        IF @HashActual IS NULL OR @PasswordHashEsperado IS NULL
+            OR CONVERT(VARBINARY(510), @HashActual) <> CONVERT(VARBINARY(510), @PasswordHashEsperado)
+            THROW 50401, N'Correo o contraseña incorrectos.', 1;
+        IF @Bloqueado = 1
+            THROW 50403, N'La cuenta se encuentra suspendida.', 1;
+        INSERT INTO dbo.Sesion (UsuarioId, TokenHash, FechaExpiracion, IpOrigen)
+        VALUES (@UsuarioId, @TokenHash, DATEADD(MINUTE, @MinutosVida, SYSUTCDATETIME()), @IpOrigen);
+        UPDATE dbo.Usuario SET UltimoLogin = SYSUTCDATETIME() WHERE UsuarioId = @UsuarioId;
+        COMMIT TRANSACTION;
+    END TRY
+    BEGIN CATCH
+        IF @@TRANCOUNT > 0 ROLLBACK TRANSACTION;
+        THROW;
+    END CATCH;
 END
 GO
 
@@ -1100,5 +1114,73 @@ BEGIN
     ORDER BY f.FechaPublicacion DESC, f.ResenaId DESC
     OFFSET (@Pagina - 1) * @TamanioPagina ROWS
     FETCH NEXT @TamanioPagina ROWS ONLY;
+END
+GO
+
+CREATE OR ALTER PROCEDURE dbo.sp_ObtenerCuenta
+    @UsuarioId INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+    SELECT UsuarioId, NombreUsuario, Email, AvatarUrl
+    FROM dbo.Usuario
+    WHERE UsuarioId = @UsuarioId AND Bloqueado = 0;
+END
+GO
+
+CREATE OR ALTER PROCEDURE dbo.sp_ActualizarPerfil
+    @UsuarioId INT,
+    @NombreUsuario NVARCHAR(30),
+    @AvatarUrl NVARCHAR(500) = NULL
+AS
+BEGIN
+    SET NOCOUNT ON;
+    SET XACT_ABORT ON;
+    BEGIN TRY
+        BEGIN TRANSACTION;
+        IF NOT EXISTS (SELECT 1 FROM dbo.Usuario WITH (UPDLOCK, HOLDLOCK) WHERE UsuarioId = @UsuarioId AND Bloqueado = 0)
+            THROW 50401, N'La cuenta ya no está disponible.', 1;
+        IF EXISTS (SELECT 1 FROM dbo.Usuario WHERE NombreUsuario = @NombreUsuario AND UsuarioId <> @UsuarioId)
+            THROW 50409, N'El nombre de usuario ya se encuentra en uso.', 1;
+        UPDATE dbo.Usuario SET NombreUsuario = @NombreUsuario, AvatarUrl = @AvatarUrl
+        WHERE UsuarioId = @UsuarioId;
+        COMMIT TRANSACTION;
+    END TRY
+    BEGIN CATCH
+        IF @@TRANCOUNT > 0 ROLLBACK TRANSACTION;
+        THROW;
+    END CATCH;
+END
+GO
+
+CREATE OR ALTER PROCEDURE dbo.sp_CambiarPassword
+    @UsuarioId INT,
+    @PasswordHashEsperado NVARCHAR(255),
+    @PasswordHashNuevo NVARCHAR(255)
+AS
+BEGIN
+    SET NOCOUNT ON;
+    SET XACT_ABORT ON;
+    BEGIN TRY
+        BEGIN TRANSACTION;
+        DECLARE @HashActual NVARCHAR(255), @Bloqueado BIT;
+        SELECT @HashActual = PasswordHash, @Bloqueado = Bloqueado
+        FROM dbo.Usuario WITH (UPDLOCK, HOLDLOCK)
+        WHERE UsuarioId = @UsuarioId;
+        IF @HashActual IS NULL OR @Bloqueado = 1
+            THROW 50401, N'La cuenta ya no está disponible.', 1;
+        IF @PasswordHashEsperado IS NULL OR @PasswordHashNuevo IS NULL OR LEN(@PasswordHashNuevo) = 0
+            THROW 50400, N'La solicitud no es válida.', 1;
+        IF CONVERT(VARBINARY(510), @HashActual) <> CONVERT(VARBINARY(510), @PasswordHashEsperado)
+            THROW 50409, N'Las credenciales cambiaron. Vuelva a iniciar sesión.', 1;
+        UPDATE dbo.Usuario SET PasswordHash = @PasswordHashNuevo WHERE UsuarioId = @UsuarioId;
+        UPDATE dbo.Sesion SET FechaRevocacion = SYSUTCDATETIME()
+        WHERE UsuarioId = @UsuarioId AND FechaRevocacion IS NULL;
+        COMMIT TRANSACTION;
+    END TRY
+    BEGIN CATCH
+        IF @@TRANCOUNT > 0 ROLLBACK TRANSACTION;
+        THROW;
+    END CATCH;
 END
 GO

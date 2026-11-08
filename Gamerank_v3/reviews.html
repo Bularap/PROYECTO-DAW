@@ -52,12 +52,12 @@
         <div class="field">
           <label for="estado">Estado</label>
           <select id="estado">
-            <option>Jugado</option><option>Quiero jugarlo</option><option>Abandonado</option>
+            <option value="">Sin cambiar mi lista</option>
           </select>
         </div>
         <div class="field">
           <label for="texto">Reseña</label>
-          <textarea id="texto" rows="5" maxlength="1000" placeholder="¿Qué te pareció? (mínimo 10 caracteres)"></textarea>
+          <textarea id="texto" rows="5" maxlength="2000" placeholder="¿Qué te pareció? (mínimo 10 caracteres)"></textarea>
           <p class="field-error" id="err-texto"></p>
         </div>
         <div class="field">
@@ -65,7 +65,16 @@
             <span>Acepto el tratamiento de mis datos según la <a href="#privacidad">política de privacidad</a> (Ley 25.326).</span></label>
           <p class="field-error" id="err-acepto"></p>
         </div>
-        <button class="btn" type="submit">Publicar reseña</button>
+        <div class="card-actions">
+          <button class="btn" type="submit" id="publicar">Publicar reseña</button>
+          <button class="btn btn-ghost" type="button" id="cancelar" hidden>Cancelar edición</button>
+        </div>
+        <div class="card-actions">
+          <button class="btn btn-ghost" type="button" id="guardar-puntaje">Guardar puntuación</button>
+          <button class="btn btn-ghost" type="button" id="quitar-puntaje">Quitar puntuación</button>
+        </div>
+        <p class="meta">Reseña, puntuación y estado se guardan por separado. Quitar una reseña no elimina tu puntuación.</p>
+        <p id="review-aviso" role="status" aria-live="polite"></p>
       </form>
     </section>
 
@@ -73,6 +82,8 @@
       <div class="list-head">
         <h2 id="t-lista">Reseñas de la comunidad</h2>
         <label class="sr-only" for="filtro-puntaje">Filtrar por puntuación</label>
+        <label class="sr-only" for="alcance">Mostrar reseñas</label>
+        <select id="alcance"><option value="comunidad">Comunidad</option><option value="propias">Mis reseñas</option></select>
         <select id="filtro-puntaje">
           <option value="0">Todas las puntuaciones</option>
           <option value="5">5 estrellas</option><option value="4">4 estrellas</option>
@@ -80,6 +91,7 @@
         </select>
       </div>
       <div id="lista" aria-live="polite"></div>
+      <div id="review-pager" class="toolbar"></div>
     </section>
   </main>
 
@@ -91,71 +103,10 @@
     </div>
   </footer>
 
-  <script src="js/demo-data.js"></script>
   <script src="js/app.js"></script>
+  <script src="js/api.js"></script>
   <script src="js/auth.js"></script>
-  <script>
-    const form = $('#form-review'), lista = $('#lista');
-    let juegoId = null;
-
-    /* Prefill desde index.html (?id=...&nombre=...) */
-    const qs = new URLSearchParams(location.search);
-    if (qs.get('nombre')) { $('#juego').value = qs.get('nombre'); juegoId = Number(qs.get('id')); }
-
-    /* Autocompletado con RAWG */
-    const sugerir = debounce(async () => {
-      const q = $('#juego').value.trim();
-      if (q.length < 3) return;
-      try {
-        const d = await rawg('games', { search: q, page_size: 6 });
-        $('#sugerencias').replaceChildren(...d.results.map(j => el('option', { value: j.name, 'data-id': j.id })));
-      } catch { /* sin sugerencias; el usuario puede escribir igual */ }
-    }, 350);
-    $('#juego').addEventListener('input', () => {
-      const op = [...$('#sugerencias').options].find(o => o.value === $('#juego').value);
-      juegoId = op ? Number(op.dataset.id) : null;
-      sugerir();
-    });
-
-    /* Validación */
-    function validar() {
-      const err = {};
-      if ($('#juego').value.trim().length < 2) err.juego = 'Indicá el nombre del juego.';
-      if (!form.puntaje.value) err.puntaje = 'Elegí una puntuación de 1 a 5.';
-      if ($('#texto').value.trim().length < 10) err.texto = 'La reseña debe tener al menos 10 caracteres.';
-      if (!$('#acepto').checked) err.acepto = 'Debés aceptar la política de privacidad.';
-      for (const c of ['juego', 'puntaje', 'texto', 'acepto']) $(`#err-${c}`).textContent = err[c] || '';
-      return Object.keys(err).length === 0;
-    }
-
-    form.addEventListener('submit', async e => {
-      e.preventDefault();
-      if (!validar()) return;
-      await ReviewStore.add({
-        juegoId, juego: $('#juego').value.trim(), puntaje: Number(form.puntaje.value),
-        estado: $('#estado').value, texto: $('#texto').value.trim()
-      });
-      form.reset(); juegoId = null;
-      render();
-    });
-
-    /* Render con DOM */
-    async function render() {
-      const min = Number($('#filtro-puntaje').value);
-      const todas = await ReviewStore.all();
-      const items = min ? todas.filter(r => r.puntaje === min) : todas;
-      if (!items.length) return showStatus(lista, 'Todavía no hay reseñas. ¡Escribí la primera!');
-      lista.replaceChildren(...items.map(r => el('article', { class: 'review' },
-        el('h3', {}, r.juego),
-        el('div', {}, el('span', { class: 'stars', role: 'img', 'aria-label': `${r.puntaje} de 5 estrellas` }, stars(r.puntaje)), ` · ${r.estado}`),
-        el('p', {}, r.texto),
-        el('p', { class: 'meta' }, new Date(r.fecha).toLocaleDateString('es-AR')),
-        el('div', { class: 'review-actions' },
-          el('button', { class: 'btn btn-ghost', onclick: async () => { if (confirm('¿Eliminar esta reseña?')) { await ReviewStore.remove(r.id); render(); } } }, 'Eliminar')
-        ))));
-    }
-    $('#filtro-puntaje').addEventListener('change', render);
-    render();
-  </script>
+  <script src="js/datos.js"></script>
+  <script src="js/reviews.js"></script>
 </body>
 </html>

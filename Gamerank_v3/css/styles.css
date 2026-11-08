@@ -49,7 +49,7 @@ a { color: var(--gold); }
 /* ----- Controles ----- */
 .toolbar { display: flex; flex-wrap: wrap; gap: .75rem; padding-block: 1.5rem; }
 input, select, textarea, button { font: inherit; }
-input[type="search"], input[type="text"], input[type="email"], select, textarea {
+input[type="search"], input[type="text"], input[type="email"], .field input[type="password"], select, textarea {
   background: var(--surface); color: var(--text); border: 1px solid var(--line);
   border-radius: var(--radius); padding: .6rem .8rem; width: 100%;
 }

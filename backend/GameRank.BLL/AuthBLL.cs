@@ -11,10 +11,12 @@ public class AuthBLL
     private const string VersionPolitica = "1.0";
 
     private readonly UsuarioDAL _dal;
+    private readonly AvatarServicio _avatares;
 
-    public AuthBLL(UsuarioDAL dal)
+    public AuthBLL(UsuarioDAL dal, AvatarServicio avatares)
     {
         _dal = dal;
+        _avatares = avatares;
     }
 
     public async Task<SesionIniciada> Registrar(string? email, string? nombreUsuario, string? password, bool aceptaPrivacidad, string? ip)
@@ -32,8 +34,9 @@ public class AuthBLL
         if (!aceptaPrivacidad)
             throw new AppException(400, "Debe aceptar la Política de Privacidad (Ley 25.326).");
 
-        var usuario = await _dal.Registrar(correo, nombre, HashServicio.Generar(clave), VersionPolitica);
-        return await IniciarSesion(usuario, ip);
+        var hash = HashServicio.Generar(clave);
+        var usuario = await _dal.Registrar(correo, nombre, hash, VersionPolitica);
+        return await IniciarSesion(usuario, hash, ip);
     }
 
     public async Task<SesionIniciada> Login(string? email, string? password, string? ip)
@@ -50,12 +53,45 @@ public class AuthBLL
         if (credenciales!.Bloqueado)
             throw new AppException(403, "La cuenta se encuentra suspendida.");
 
-        return await IniciarSesion(credenciales.Usuario, ip);
+        return await IniciarSesion(credenciales.Usuario, credenciales.PasswordHash, ip);
     }
 
     public Task<Usuario?> ValidarToken(string token) => _dal.ValidarSesion(TokenServicio.Hashear(token));
 
     public Task Logout(string token) => _dal.CerrarSesion(TokenServicio.Hashear(token));
+
+    public async Task<Cuenta> ObtenerCuenta(int usuarioId)
+    {
+        var cuenta = await _dal.ObtenerCuenta(usuarioId);
+        cuenta.Avatares = _avatares.Catalogo;
+        return cuenta;
+    }
+
+    public async Task<Cuenta> ActualizarPerfil(int usuarioId, string? nombreUsuario, string? avatarId)
+    {
+        var nombre = nombreUsuario?.Trim() ?? "";
+        if (nombre.Length < 3 || nombre.Length > 30)
+            throw new AppException(400, "El nombre de usuario debe tener entre 3 y 30 caracteres.");
+
+        await _dal.ActualizarPerfil(usuarioId, nombre, _avatares.ObtenerUrl(avatarId));
+        return await ObtenerCuenta(usuarioId);
+    }
+
+    public async Task CambiarPassword(int usuarioId, string? passwordActual, string? passwordNueva)
+    {
+        var actual = passwordActual ?? "";
+        var nueva = passwordNueva ?? "";
+        if (actual.Length == 0)
+            throw new AppException(400, "Debe ingresar la contraseña actual.");
+        if (!EsPasswordValida(nueva))
+            throw new AppException(400, "La nueva contraseña debe tener al menos 8 caracteres, no superar 72 bytes UTF-8 e incluir una letra y un número.");
+
+        var hash = await _dal.ObtenerPasswordHash(usuarioId);
+        if (Encoding.UTF8.GetByteCount(actual) > 72 || !HashServicio.Verificar(actual, hash))
+            throw new AppException(403, "La contraseña actual es incorrecta.");
+
+        await _dal.CambiarPassword(usuarioId, hash!, HashServicio.Generar(nueva));
+    }
 
     public async Task EliminarCuenta(int usuarioId, string? password)
     {
@@ -70,10 +106,10 @@ public class AuthBLL
         await _dal.Eliminar(usuarioId);
     }
 
-    private async Task<SesionIniciada> IniciarSesion(Usuario usuario, string? ip)
+    private async Task<SesionIniciada> IniciarSesion(Usuario usuario, string passwordHash, string? ip)
     {
         var token = TokenServicio.Generar();
-        await _dal.CrearSesion(usuario.UsuarioId, TokenServicio.Hashear(token), ip);
+        await _dal.CrearSesion(usuario.UsuarioId, TokenServicio.Hashear(token), passwordHash, ip);
         return new SesionIniciada { Token = token, Usuario = usuario };
     }
 

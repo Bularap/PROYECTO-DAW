@@ -1,62 +1,53 @@
-/* ===== Perfil, cuenta y biblioteca – almacenes + utilidades =====
-   Misma idea que ReviewStore/WishlistStore de app.js: con USE_DEMO = true usan localStorage;
-   con USE_DEMO = false llaman a la API (que ejecuta los procedimientos de /database).
-   Las formas de datos replican los result sets de sp_ObtenerPerfil, para que el cambio no toque la interfaz. */
-const API_URL = '/api';
-const ESTADOS_DB = ['Jugado', 'Quiero jugarlo', 'Abandonado'];      // = tabla EstadoLista (ids 1, 2, 3)
-const ID_ESTADO = Object.fromEntries(ESTADOS_DB.map((n, i) => [n, i + 1]));
-
 async function req(ruta, metodo = 'GET', body) {
-  const h = { 'Content-Type': 'application/json' };
-  const t = localStorage.getItem('token'); if (t) h.Authorization = 'Bearer ' + t;
-  let r;
-  try { r = await fetch(API_URL + ruta, { method: metodo, headers: h, body: body && JSON.stringify(body) }); }
-  catch { throw Object.assign(new Error('No hay conexión con el servidor. Revisá tu internet.'), { status: 0 }); }
-  const d = await r.json().catch(() => ({}));
-  if (!r.ok) throw Object.assign(new Error(d.mensaje || `Error del servidor (${r.status}).`), { status: r.status });
-  return d;
+  return GameRankAuth.request(ruta, { method: metodo, body });
 }
 
 const CuentaStore = {
-  KEY: 'gamerank_cuenta',
+  validar(account, owner) {
+    if (account?.usuarioId !== owner.usuarioId || typeof account.nombreUsuario !== 'string'
+      || typeof account.email !== 'string' || !(account.avatarUrl === null || typeof account.avatarUrl === 'string')
+      || !account.avatares || typeof account.avatares !== 'object' || Array.isArray(account.avatares)
+      || !Object.entries(account.avatares).every(([id, url]) => id && typeof url === 'string' && /^https?:\/\//.test(url))) {
+      throw GameRankApi.createError('El servidor devolvió datos de cuenta inesperados.', 0, 'response');
+    }
+    return account;
+  },
   async get() {
-    if (!USE_DEMO) return req('/me');
-    return JSON.parse(localStorage.getItem(this.KEY) || JSON.stringify({
-      nombreUsuario: 'jugador1', email: 'jugador@mail.com', avatarUrl: '', perfilPublico: true, mostrarListas: true, fechaRegistro: new Date().toISOString() }));
+    const requestedToken = GameRankAuth.token();
+    await GameRankAuth.ready;
+    const user = GameRankAuth.user();
+    const token = GameRankAuth.token();
+    if (!user || !token || requestedToken !== token) throw GameRankApi.createError('Ingresá para consultar tu cuenta.', 401, 'session');
+    const [account, profile] = await Promise.all([GameRankAuth.request('/auth/cuenta'), GameRankData.profile()]);
+    if (GameRankAuth.user()?.usuarioId !== user.usuarioId || GameRankAuth.token() !== token || profile.usuarioId !== user.usuarioId) {
+      throw GameRankApi.createError('La sesión cambió. Volvé a cargar tu cuenta.', 401, 'session');
+    }
+    return { ...this.validar(account, user), rol: user.rol, fechaRegistro: profile.fechaRegistro };
   },
-  async guardar(datos) {                                   // PUT /api/me  (NombreUsuario, AvatarUrl, privacidad)
-    if (!USE_DEMO) return req('/me', 'PUT', datos);
-    localStorage.setItem(this.KEY, JSON.stringify({ ...(await this.get()), ...datos }));
+  async guardar(nombreUsuario, avatarId) {
+    const requestedToken = GameRankAuth.token();
+    await GameRankAuth.ready;
+    const user = GameRankAuth.user();
+    if (!user || !requestedToken || requestedToken !== GameRankAuth.token()) throw GameRankApi.createError('La sesión cambió. Volvé a cargar tu perfil.', 401, 'session');
+    const account = await GameRankAuth.request('/auth/perfil', { method: 'PUT', body: { nombreUsuario, avatarId } });
+    if (GameRankAuth.token() !== requestedToken || GameRankAuth.user()?.usuarioId !== user.usuarioId) throw GameRankApi.createError('La sesión cambió. Volvé a cargar tu perfil.', 401, 'session');
+    return this.validar(account, user);
   },
-  async cambiarEmail(email, password) { if (!USE_DEMO) return req('/me/email', 'PUT', { email, password }); await this.guardar({ email }); },
-  async cambiarPassword(actual, nueva) { if (!USE_DEMO) return req('/me/password', 'PUT', { actual, nueva }); },
-  async eliminar() {                                       // derecho de supresión → sp_EliminarUsuario
-    if (!USE_DEMO) return req('/me', 'DELETE');
-    ['gamerank_cuenta', 'gamerank_reviews', 'gamerank_wishlist'].forEach(k => localStorage.removeItem(k));
-  }
+  async cambiarEmail() { throw GameRankApi.createError('El servidor todavía no permite cambiar el correo.', 0, 'unavailable'); },
+  cambiarPassword: (passwordActual, passwordNueva) => GameRankAuth.changePassword(passwordActual, passwordNueva),
+  eliminar: password => GameRankAuth.deleteAccount(password)
 };
 
 const PerfilStore = {
-  async obtener(id) {                                      // GET /api/usuarios/{id}/perfil  → sp_ObtenerPerfil
-    if (!USE_DEMO) return req('/usuarios/' + (id || 'me') + '/perfil');
-    const c = await CuentaStore.get(), rs = await ReviewStore.all(), ws = await WishlistStore.all();
-    const prom = rs.length ? rs.reduce((s, r) => s + r.puntaje, 0) / rs.length : null;
-    return {
-      esPropio: true,
-      usuario: { NombreUsuario: c.nombreUsuario, AvatarUrl: c.avatarUrl, FechaRegistro: c.fechaRegistro,
-                 PromedioOtorgado: prom, CantidadCalificaciones: rs.length, CantidadResenas: rs.length },
-      estados: ESTADOS_DB.map((n, i) => ({ EstadoListaId: i + 1, Nombre: n, Cantidad: ws.filter(x => x.estado === n).length })),
-      calificaciones: rs.map(r => ({ JuegoId: r.juegoId ?? r.id, Titulo: r.juego, PortadaUrl: '', Puntuacion: r.puntaje, Fecha: r.fecha })),
-      resenas: rs.map(r => ({ ResenaId: r.id, JuegoId: r.juegoId ?? r.id, Titulo: r.juego, Puntuacion: r.puntaje, Contenido: r.texto, FechaPublicacion: r.fecha, Editada: false }))
-    };
-  },
-  async eliminarResena(id) { if (!USE_DEMO) return req('/resenas/' + id, 'DELETE'); return ReviewStore.remove(id); }   // sp_EliminarResena
+  obtener: id => GameRankData.profile(id),
+  eliminarResena: id => GameRankData.removeReview(id)
 };
 
-const BibliotecaStore = {                                  // items: { id, name, background_image, genres, released, rating, estado }
-  async all() { return USE_DEMO ? WishlistStore.all() : req('/biblioteca'); },
-  async setEstado(id, estado) { return USE_DEMO ? WishlistStore.setEstado(id, estado) : req('/biblioteca/' + id, 'PUT', { estadoListaId: ID_ESTADO[estado] }); },  // sp_AsignarEstadoBiblioteca
-  async quitar(id) { return USE_DEMO ? WishlistStore.remove(id) : req('/biblioteca/' + id, 'DELETE'); }                                                   // sp_QuitarDeBiblioteca
+const BibliotecaStore = {
+  all: () => GameRankData.library(),
+  estados: () => GameRankData.states(),
+  setEstado: (id, estadoListaId) => GameRankData.setState(id, estadoListaId),
+  quitar: id => GameRankData.remove(id)
 };
 
 /* ----- Utilidades de interfaz ----- */
@@ -66,19 +57,21 @@ function cabecera(actual) {
     el('a', { class: 'logo', href: 'index.html' }, 'Game', el('span', {}, 'Rank')),
     el('button', { class: 'nav-toggle', 'aria-expanded': 'false', 'aria-controls': 'nav' }, 'Menú'),
     el('nav', { class: 'nav', id: 'nav', 'aria-label': 'Principal' },
-      ...links.map(([h, t]) => el('a', { href: h, 'aria-current': h === actual ? 'page' : null }, t))))));
+      ...links.map(([h, t]) => el('a', { href: h, 'aria-current': h === actual ? 'page' : null }, t)),
+      el('div', { class: 'auth-nav', id: 'auth-nav' })))));
+  document.querySelector('.site-header').after(el('p', { class: 'container session-status', id: 'session-status', role: 'status', hidden: true }));
 }
 function pie() {
   document.body.append(el('footer', { class: 'site-footer' }, el('div', { class: 'container' },
-    el('p', {}, 'Datos de videojuegos provistos por ', el('a', { href: 'https://rawg.io', target: '_blank', rel: 'noopener' }, 'RAWG'), '.'),
-    el('p', { class: 'privacy' }, 'Aviso de privacidad (Ley 25.326): los datos que ingreses se usan solo para gestionar tu cuenta, tus reseñas y tu lista de juegos. Podés acceder, rectificar o suprimir tus datos desde Configuración. La AAIP es el órgano de control de la ley.'))));
+    el('p', {}, 'Datos de videojuegos provistos por ', el('a', { href: 'https://store.steampowered.com', target: '_blank', rel: 'noopener' }, 'Steam'), '.'),
+    el('p', { class: 'privacy' }, el('a', { href: 'reviews.html#privacidad' }, 'Aviso de privacidad'), '. Podés editar tu nombre y avatar desde tu perfil, cambiar la contraseña y solicitar la baja desde Configuración. El cambio de correo y las preferencias de privacidad todavía no están disponibles.'))));
 }
 function aviso(texto, ok = false) { const a = $('#aviso'); a.textContent = texto; a.classList.toggle('ok', ok); }
 function errorCampo(id, texto) {                           // marca el campo y muestra el error; devuelve true si es válido
   const i = $('#' + id); i.setAttribute('aria-invalid', String(!!texto)); $('#e-' + id).textContent = texto || ''; return !texto;
 }
 function campo(id, etiqueta, tipo, extra = {}) {
-  return el('div', { class: 'field' }, el('label', { for: id }, etiqueta), el('input', { id, type: tipo, ...extra }), el('p', { class: 'field-error', id: 'e-' + id }));
+  return el('div', { class: 'field' }, el('label', { for: id }, etiqueta), el('input', { id, type: tipo, 'aria-describedby': 'e-' + id, ...extra }), el('p', { class: 'field-error', id: 'e-' + id }));
 }
 function avatar(url, nombre, grande) {
   return el('div', { class: 'avatar' + (grande ? ' grande' : ''), 'aria-hidden': 'true' },

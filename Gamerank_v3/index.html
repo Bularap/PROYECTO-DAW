@@ -42,19 +42,20 @@
     <div class="container">
       <form class="toolbar" id="filtros" role="search">
         <label class="sr-only" for="q">Buscar juego</label>
-        <input type="search" id="q" placeholder="Buscar un juego…">
+        <input type="search" id="q" placeholder="Buscar un juego…" maxlength="100">
         <label class="sr-only" for="genero">Género</label>
         <select id="genero"><option value="">Todos los géneros</option></select>
         <label class="sr-only" for="orden">Ordenar por</label>
         <select id="orden">
-          <option value="-added">Más populares</option>
-          <option value="-rating">Mejor puntuados</option>
-          <option value="-released">Más recientes</option>
-          <option value="name">Nombre (A-Z)</option>
+          <option value="puntuacion">Mejor puntuados</option>
+          <option value="lanzamiento">Más recientes</option>
+          <option value="titulo">Nombre (A-Z)</option>
         </select>
       </form>
 
-      <h2 id="titulo-lista">Populares</h2>
+      <h2 id="titulo-lista">Mejor puntuados</h2>
+      <div id="catalogo-aviso" aria-live="polite"></div>
+      <div id="personal-aviso" aria-live="polite"></div>
       <div id="resultados" class="grid" aria-live="polite"></div>
       <div id="pager" class="toolbar" style="justify-content:center"></div>
     </div>
@@ -62,79 +63,14 @@
 
   <footer class="site-footer">
     <div class="container">
-      <p>Datos de videojuegos provistos por <a href="https://rawg.io" target="_blank" rel="noopener">RAWG</a>.</p>
+      <p>Catálogo de GAME RANK con datos de <a href="https://store.steampowered.com" target="_blank" rel="noopener">Steam</a>.</p>
       <p class="privacy">Aviso de privacidad (Ley 25.326): los datos personales que ingreses se usan solo para gestionar tus reseñas. Podés acceder, rectificar o suprimir tus datos escribiendo a privacidad@gamerank.example. La AAIP es el órgano de control de la ley.</p>
     </div>
   </footer>
 
-  <script src="js/demo-data.js"></script>
   <script src="js/app.js"></script>
+  <script src="js/api.js"></script>
   <script src="js/auth.js"></script>
-  <script>
-    const res = $('#resultados'), pager = $('#pager');
-    let page = 1, guardados = new Map();
-
-    async function cargarGeneros() {
-      try {
-        const data = await rawg('genres');
-        $('#genero').append(...data.results.map(g => el('option', { value: g.slug }, g.name)));
-      } catch { /* los filtros siguen funcionando sin géneros */ }
-    }
-
-    /* Dropdown "+ Mi lista": agrega el juego con el estado elegido o, si ya está, cambia su estado */
-    function selectorLista(j, estadoActual) {
-      const sel = el('select', { class: 'estado-select', 'aria-label': `Agregar ${j.name} a mi lista` },
-        el('option', { value: '', disabled: true, selected: !estadoActual }, '+ Mi lista'),
-        ...ESTADOS_LISTA.map(e => el('option', { value: e, selected: e === estadoActual }, e)));
-      sel.addEventListener('change', async () => {
-        if (guardados.has(j.id)) await WishlistStore.setEstado(j.id, sel.value);
-        else await WishlistStore.add({
-          id: j.id, name: j.name, background_image: j.background_image,
-          genres: j.genres.map(g => g.name), released: j.released,
-          rating: j.rating, ratings_count: j.ratings_count
-        }, sel.value);
-        guardados.set(j.id, sel.value);
-      });
-      return sel;
-    }
-
-    function tarjeta(j, estadoActual) {
-      const generos = j.genres.map(g => g.name).slice(0, 2).join(', ') || 'Sin género';
-      const anio = j.released ? j.released.slice(0, 4) : 's/f';
-      return el('article', { class: 'card' },
-        el('img', { src: j.background_image || '', alt: `Portada de ${j.name}`, loading: 'lazy' }),
-        el('div', { class: 'card-body' },
-          el('h3', {}, j.name),
-          el('p', { class: 'meta' }, `${generos} · ${anio}`),
-          el('p', { class: 'meta' }, el('span', { class: 'stars', 'aria-hidden': 'true' }, stars(Math.round(j.rating))), ` ${j.rating.toFixed(1)}/5 (${j.ratings_count})`),
-          el('div', { class: 'card-actions' },
-            el('a', { class: 'btn', href: `reviews.html?id=${j.id}&nombre=${encodeURIComponent(j.name)}` }, 'Escribir reseña'),
-            selectorLista(j, estadoActual)
-          )
-        ));
-    }
-
-    async function buscar() {
-      showStatus(res, 'Cargando juegos…');
-      const q = $('#q').value.trim();
-      try {
-        const data = await rawg('games', { page, page_size: 12, search: q, genres: $('#genero').value, ordering: $('#orden').value });
-        $('#titulo-lista').textContent = q ? `Resultados para “${q}”` : 'Populares';
-        if (!data.results.length) return showStatus(res, 'No encontramos juegos con esos filtros. Probá otra búsqueda.');
-        guardados = new Map((await WishlistStore.all()).map(x => [x.id, x.estado]));
-        res.replaceChildren(...data.results.map(j => tarjeta(j, guardados.get(j.id))));
-        pager.replaceChildren(
-          el('button', { class: 'btn btn-ghost', disabled: page === 1, onclick: () => { page--; buscar(); } }, 'Anterior'),
-          el('button', { class: 'btn btn-ghost', disabled: !data.next, onclick: () => { page++; buscar(); } }, 'Siguiente')
-        );
-      } catch (e) { showStatus(res, e.message, 'error'); pager.replaceChildren(); }
-    }
-
-    $('#filtros').addEventListener('submit', e => e.preventDefault());
-    $('#q').addEventListener('input', debounce(() => { page = 1; buscar(); }));
-    $('#genero').addEventListener('change', () => { page = 1; buscar(); });
-    $('#orden').addEventListener('change', () => { page = 1; buscar(); });
-    cargarGeneros(); buscar();
-  </script>
+  <script src="js/catalogo.js"></script>
 </body>
 </html>

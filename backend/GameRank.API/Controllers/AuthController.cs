@@ -5,6 +5,7 @@ using GameRank.BE;
 using GameRank.BLL;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace GameRank.API.Controllers;
 
@@ -52,6 +53,29 @@ public class AuthController : ControllerBase
             NombreUsuario = User.Identity!.Name!,
             Rol = User.FindFirstValue(ClaimTypes.Role)!
         });
+    }
+
+    [Authorize]
+    [HttpGet("cuenta")]
+    public async Task<IActionResult> Cuenta()
+    {
+        return Ok(await _auth.ObtenerCuenta(User.Id()));
+    }
+
+    [Authorize]
+    [HttpPut("perfil")]
+    public async Task<IActionResult> Perfil(PerfilEdicionPedido pedido)
+    {
+        return Ok(await _auth.ActualizarPerfil(User.Id(), pedido.NombreUsuario, pedido.AvatarId));
+    }
+
+    [Authorize]
+    [EnableRateLimiting("cambio-password")]
+    [HttpPut("password")]
+    public async Task<IActionResult> Password(PasswordCambioPedido pedido)
+    {
+        await _auth.CambiarPassword(User.Id(), pedido.PasswordActual, pedido.PasswordNueva);
+        return NoContent();
     }
 
     [Authorize]
