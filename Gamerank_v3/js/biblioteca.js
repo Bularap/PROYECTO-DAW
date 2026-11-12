@@ -1,11 +1,9 @@
 (() => {
-  cabecera('biblioteca.html');
   pie();
   const main = $('#main');
   main.append(el('div', { class: 'page-head' }, el('h1', {}, 'Mi biblioteca'),
     el('p', { class: 'meta' }, 'Tus juegos y sus estados actuales. Cambiá el estado o quitalos cuando quieras.')),
-    el('p', { class: 'meta' }, 'La biblioteca no incluye géneros, fecha de lanzamiento ni valoración del juego.'),
-    el('div', { id: 'aviso-bib', 'aria-live': 'polite' }),
+    el('p', { id: 'aviso-bib', class: 'aviso-flotante', role: 'status', 'aria-live': 'polite' }),
     el('div', { class: 'tabs', id: 'tabs', role: 'group', 'aria-label': 'Filtrar por estado' }),
     el('div', { id: 'lista', class: 'grid', 'aria-live': 'polite' }));
   const list = $('#lista');
@@ -26,7 +24,7 @@
     }));
     const items = filter ? games.filter(game => game.estadoListaId === filter) : games;
     if (items.length) list.replaceChildren(...items.map(card));
-    else showStatus(list, games.length ? 'No tenés juegos en este estado.' : 'Tu biblioteca está vacía. Agregá juegos desde la sección Juegos.');
+    else showStatus(list, games.length ? 'No tenés juegos en este estado.' : 'Tu biblioteca está vacía. Agregá juegos desde la sección Juegos con el botón «+ Agregar».');
   }
 
   function card(game) {
@@ -42,13 +40,13 @@
       try {
         await action();
         if (GameRankAuth.token() !== owner) return;
-        notice.textContent = 'Biblioteca actualizada.';
+        avisoTemporal(notice, 'Biblioteca actualizada.');
         await load();
         $(`#estado-${game.juegoId}`)?.focus();
       } catch (error) {
         if (GameRankAuth.token() !== owner) return;
         select.value = String(game.estadoListaId);
-        showStatus(notice, error.message, 'error');
+        avisoTemporal(notice, error.message, 8000);
       } finally { select.disabled = false; remove.disabled = false; }
     }
     select.addEventListener('change', () => mutate(() => BibliotecaStore.setEstado(game.juegoId, Number(select.value))));

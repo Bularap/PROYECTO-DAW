@@ -11,28 +11,8 @@
   <link rel="stylesheet" href="css/auth.css">
 </head>
 <body>
-  <header class="site-header">
-    <div class="container">
-      <a class="logo" href="index.html">Game<span>Rank</span></a>
-      <button class="nav-toggle" aria-expanded="false" aria-controls="nav">Menú</button>
-      <nav class="nav" id="nav" aria-label="Principal">
-  <a href="index.html" aria-current="page">Juegos</a>
-  <a href="reviews.html">Reviews</a>
-  <a href="wishlist.html">Mi Lista</a>
-  <a href="biblioteca.html">Mi biblioteca</a>
-  <a href="diario.html">Diario</a>
-  <a href="perfil.html">Perfil</a>
-  <div class="auth-nav" id="auth-nav">
-    <a href="login.html">Ingresar</a>
-    <a href="register.html">Crear cuenta</a>
-  </div>
-</nav>
-    </div>
-  </header>
-  <p class="container session-status" id="session-status" role="status" hidden></p>
-
   <main>
-    <section class="hero" style="--hero-img: url('imagenes/banner.webp');">
+    <section class="hero">
       <div class="container">
         <h1>GameRank</h1>
         <p>Audentes Fortuna Iuvat!</p>
@@ -55,7 +35,7 @@
 
       <h2 id="titulo-lista">Mejor puntuados</h2>
       <div id="catalogo-aviso" aria-live="polite"></div>
-      <div id="personal-aviso" aria-live="polite"></div>
+      <p id="personal-aviso" class="aviso-flotante" role="status" aria-live="polite"></p>
       <div id="resultados" class="grid" aria-live="polite"></div>
       <div id="pager" class="toolbar" style="justify-content:center"></div>
     </div>

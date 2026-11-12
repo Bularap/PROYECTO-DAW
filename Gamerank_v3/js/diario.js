@@ -13,7 +13,7 @@
   function renderStats() {
     const stats = [[profile.cantidadResenas, 'Reseñas'],
       [profile.promedioOtorgado == null ? '–' : Number(profile.promedioOtorgado).toFixed(1), 'Puntaje promedio'],
-      [profile.cantidadCalificaciones, 'Juegos calificados'], [games.length, 'En mi lista']];
+      [profile.cantidadCalificaciones, 'Juegos calificados'], [games.length, 'En mi biblioteca']];
     $('#stats').replaceChildren(...stats.map(([count, title]) => el('div', { class: 'stat' }, el('strong', {}, String(count)), el('span', {}, title))));
     $('#dist').replaceChildren(...[5, 4, 3, 2, 1].map(score => {
       const count = profile.calificaciones.filter(game => game.puntuacion === score).length;
@@ -101,6 +101,7 @@
       const result = await Promise.all([GameRankData.profile(), GameRankData.library(), GameRankData.states()]);
       if (current !== version) return;
       [profile, games, states] = result;
+      $('#diario-avatar').replaceWith(Object.assign(avatar(profile.avatarUrl, profile.nombreUsuario), { id: 'diario-avatar' }));
       renderStats();
       renderEntries();
       renderList();

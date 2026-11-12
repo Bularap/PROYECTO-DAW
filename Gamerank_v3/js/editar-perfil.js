@@ -1,5 +1,4 @@
 (() => {
-  cabecera('perfil.html');
   pie();
   const main = $('#main');
   let version = 0;

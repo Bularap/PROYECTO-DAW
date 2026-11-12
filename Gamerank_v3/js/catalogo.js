@@ -37,12 +37,12 @@
       'aria-label': `Estado de ${game.titulo} en mi biblioteca`,
       disabled: personalLoading || states.length === 0
     },
-    el('option', { value: '', disabled: true, selected: !selected }, personalLoading ? 'Cargando mi lista…' : '+ Mi lista'),
+    el('option', { value: '', disabled: true, selected: !selected }, personalLoading ? 'Cargando…' : '+ Agregar'),
     ...states.map(state => el('option', {
       value: state.estadoListaId,
       selected: state.estadoListaId === selected
     }, state.nombre)));
-    if (selected) select.append(el('option', { value: 'remove' }, 'Quitar de mi lista'));
+    if (selected) select.append(el('option', { value: 'remove' }, 'Quitar de la biblioteca'));
     select.addEventListener('change', async () => {
       const user = GameRankAuth.user();
       if (!user) {
@@ -52,7 +52,7 @@
       const previous = saved.get(game.juegoId);
       const chosen = select.value;
       select.disabled = true;
-      showNotice(personalNotice, '');
+      personalNotice.textContent = '';
       try {
         await GameRankAuth.request(`/juegos/${game.juegoId}/biblioteca`, chosen === 'remove'
           ? { method: 'DELETE' }
@@ -60,11 +60,11 @@
         if (GameRankAuth.user()?.usuarioId !== user.usuarioId) return;
         if (chosen === 'remove') saved.delete(game.juegoId);
         else saved.set(game.juegoId, Number(chosen));
-        showNotice(personalNotice, chosen === 'remove' ? 'Juego quitado de tu biblioteca.' : 'Biblioteca actualizada.');
+        avisoTemporal(personalNotice, chosen === 'remove' ? 'Juego quitado de tu biblioteca.' : 'Biblioteca actualizada.');
         renderGames();
       } catch (error) {
         select.value = previous === undefined ? '' : String(previous);
-        showNotice(personalNotice, error.message, true);
+        avisoTemporal(personalNotice, error.message, 8000);
         select.disabled = false;
       }
     });
@@ -112,7 +112,7 @@
       states = data;
       renderGames();
     } catch (error) {
-      showNotice(personalNotice, `El catálogo sigue disponible. No pudimos cargar los estados de tu lista: ${error.message}`, true);
+      avisoTemporal(personalNotice, `El catálogo sigue disponible. No pudimos cargar los estados de tu lista: ${error.message}`, 8000);
     }
   }
 
@@ -124,7 +124,7 @@
     const version = ++personalVersion;
     saved = new Map();
     personalLoading = !!user;
-    showNotice(personalNotice, '');
+    personalNotice.textContent = '';
     renderGames();
     if (!user) return;
     try {
@@ -133,7 +133,7 @@
       if (version !== personalVersion) return;
       saved = new Map(data.map(item => [item.juegoId, item.estadoListaId]));
     } catch (error) {
-      if (version === personalVersion) showNotice(personalNotice, `El catálogo sigue disponible. No pudimos consultar tu biblioteca: ${error.message}`, true);
+      if (version === personalVersion) avisoTemporal(personalNotice, `El catálogo sigue disponible. No pudimos consultar tu biblioteca: ${error.message}`, 8000);
     } finally {
       if (version === personalVersion) {
         personalLoading = false;

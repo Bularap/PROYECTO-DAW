@@ -6,6 +6,12 @@
   const fields = Array.from(form.querySelectorAll('input'));
   let submitting = false;
 
+  if (!isRegister && new URLSearchParams(location.search).get('motivo') === 'password') {
+    const aviso = document.querySelector('#session-status');
+    aviso.textContent = 'Tu contraseña se cambió y se cerraron tus sesiones. Ingresá con la contraseña nueva.';
+    aviso.hidden = false;
+  }
+
   function showError(field, message) {
     document.querySelector(`#err-${field.id}`).textContent = message;
     field.setAttribute('aria-invalid', message ? 'true' : 'false');
