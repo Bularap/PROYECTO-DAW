@@ -69,8 +69,16 @@ const GameRankAuth = (() => {
     nav.replaceChildren(name, button);
   }
 
+  function rememberUser() {
+    try {
+      if (currentUser) sessionStorage.setItem(`${storageKey}_usuario`, JSON.stringify({ nombreUsuario: currentUser.nombreUsuario, rol: currentUser.rol }));
+      else sessionStorage.removeItem(`${storageKey}_usuario`);
+    } catch {}
+  }
+
   function updateUser(value) {
     currentUser = value ? { usuarioId: value.usuarioId, nombreUsuario: value.nombreUsuario, rol: value.rol } : null;
+    rememberUser();
     showNavigation();
     window.dispatchEvent(new CustomEvent('gamerank:sessionchange', { detail: user() }));
   }
@@ -207,8 +215,8 @@ const GameRankAuth = (() => {
 
   const ready = new Promise(resolve => {
     const initialize = async () => {
-      showNavigation();
       try { await validateSession(); } catch {}
+      showNavigation();
       resolve(user());
     };
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initialize, { once: true });
