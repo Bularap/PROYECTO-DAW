@@ -10,7 +10,8 @@
   --radius: 6px;
 }
 *, *::before, *::after { box-sizing: border-box; }
-html { scroll-behavior: smooth; }
+html { scroll-behavior: smooth; scrollbar-gutter: stable; }
+main { min-height: calc(100vh - 3.5rem); }
 body {
   margin: 0; background: var(--bg); color: var(--text);
   font-family: 'Source Sans 3', 'Trebuchet MS', sans-serif; line-height: 1.55;
