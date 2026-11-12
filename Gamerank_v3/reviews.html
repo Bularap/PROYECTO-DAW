@@ -10,27 +10,10 @@
   <link rel="stylesheet" href="css/auth.css">
 </head>
 <body>
-  <header class="site-header">
-    <div class="container">
-      <a class="logo" href="index.html">Game<span>Rank</span></a>
-      <button class="nav-toggle" aria-expanded="false" aria-controls="nav">Menú</button>
-      <nav class="nav" id="nav" aria-label="Principal">
-        <a href="index.html">Juegos</a>
-        <a href="reviews.html" aria-current="page">Reviews</a>
-        <a href="wishlist.html">Mi Lista</a>
-        <a href="diario.html">Diario</a>
-        <div class="auth-nav" id="auth-nav">
-          <a href="login.html">Ingresar</a>
-          <a href="register.html">Crear cuenta</a>
-        </div>
-      </nav>
-    </div>
-  </header>
-  <p class="container session-status" id="session-status" role="status" hidden></p>
-
   <main class="container layout-2col">
     <section class="panel" aria-labelledby="t-form">
       <h2 id="t-form">Escribir una reseña</h2>
+      <p class="status" id="review-login" hidden>Ingresá para escribir reseñas y puntuar juegos. <a href="login.html">Ingresar</a></p>
       <form id="form-review" novalidate>
         <div class="field">
           <label for="juego">Juego</label>
@@ -52,7 +35,7 @@
         <div class="field">
           <label for="estado">Estado</label>
           <select id="estado">
-            <option value="">Sin cambiar mi lista</option>
+            <option value="">Sin cambiar mi biblioteca</option>
           </select>
         </div>
         <div class="field">

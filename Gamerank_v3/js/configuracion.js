@@ -1,5 +1,4 @@
 (() => {
-  cabecera('perfil.html');
   pie();
   const main = $('#main');
   let version = 0;
@@ -70,7 +69,7 @@
       passwordForm.setAttribute('aria-busy', 'true');
       try {
         await CuentaStore.cambiarPassword(actual.value, nueva.value);
-        if (!GameRankAuth.user()) location.replace('login.html');
+        if (!GameRankAuth.user()) location.replace('login.html?motivo=password');
       } catch (error) {
         if (owner !== GameRankAuth.token()) return;
         passwordStatus.textContent = error.status === 403 ? 'La contraseña actual es incorrecta. La contraseña no cambió.'

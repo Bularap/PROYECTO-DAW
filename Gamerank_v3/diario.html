@@ -9,29 +9,12 @@
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Source+Sans+3:wght@400;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/styles.css">
   <link rel="stylesheet" href="css/auth.css">
+  <link rel="stylesheet" href="css/perfiles.css">
 </head>
 <body>
-  <header class="site-header">
-    <div class="container">
-      <a class="logo" href="index.html">Game<span>Rank</span></a>
-      <button class="nav-toggle" aria-expanded="false" aria-controls="nav">Menú</button>
-      <nav class="nav" id="nav" aria-label="Principal">
-        <a href="index.html">Juegos</a>
-        <a href="reviews.html">Reviews</a>
-        <a href="wishlist.html">Mi Lista</a>
-        <a href="diario.html" aria-current="page">Diario</a>
-        <div class="auth-nav" id="auth-nav">
-          <a href="login.html">Ingresar</a>
-          <a href="register.html">Crear cuenta</a>
-        </div>
-      </nav>
-    </div>
-  </header>
-  <p class="container session-status" id="session-status" role="status" hidden></p>
-
   <main class="container">
     <div class="profile-head">
-      <div class="avatar" aria-hidden="true">G</div>
+      <div class="avatar" id="diario-avatar" aria-hidden="true"></div>
       <div><h1>Mi diario</h1><p class="meta" style="margin:0">Resumen de tus reseñas y tu actividad</p></div>
     </div>
 
@@ -61,8 +44,8 @@
 
     <section class="profile-list" aria-labelledby="t-lista">
       <div class="list-head">
-        <h2 id="t-lista">Juegos en mi lista</h2>
-        <a href="wishlist.html">Administrar mi lista</a>
+        <h2 id="t-lista">Juegos en mi biblioteca</h2>
+        <a href="biblioteca.html">Administrar mi biblioteca</a>
       </div>
       <div class="tabs" id="tabs-lista" role="group" aria-label="Filtrar lista por estado"></div>
       <div id="lista-perfil" class="grid compact" aria-live="polite"></div>
@@ -80,6 +63,7 @@
   <script src="js/api.js"></script>
   <script src="js/auth.js"></script>
   <script src="js/datos.js"></script>
+  <script src="js/perfil-store.js"></script>
   <script src="js/diario.js"></script>
 </body>
 </html>

@@ -26,7 +26,11 @@ const GameRankAuth = (() => {
     return currentUser ? { ...currentUser } : null;
   }
 
+  const rolesAdmin = ['Administrador', 'SuperAdministrador'];
+
   function showNavigation() {
+    const adminLink = document.querySelector('#nav-admin');
+    if (adminLink) adminLink.hidden = !rolesAdmin.includes(currentUser?.rol);
     const nav = document.querySelector('#auth-nav');
     if (!nav) return;
     if (!currentUser) {

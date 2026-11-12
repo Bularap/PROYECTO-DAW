@@ -87,21 +87,17 @@ INSERT INTO dbo.JuegoDesarrolladora (JuegoId, DesarrolladoraId) VALUES
     (1,1),(2,2),(3,3),(5,4),(6,5),(7,6);
 GO
 
-/* ------------------------------ Usuarios de prueba ------------------------------
-   PasswordHash: valores de relleno que NO corresponden a ninguna contrasena.
-   Para poder iniciar sesion, registrarse desde la app (el backend genera el hash)
-   y luego promover la cuenta con dbo.sp_AsignarRol.
-   --------------------------------------------------------------------------------- */
+/* ------------------------------ Usuarios de prueba ------------------------------ */
 
 SET IDENTITY_INSERT dbo.Usuario ON;
 INSERT INTO dbo.Usuario (UsuarioId, Email, NombreUsuario, PasswordHash, RolId, Bloqueado,
                          AceptaPrivacidad, FechaConsentimiento, VersionPolitica) VALUES
-    (1, N'superadmin@gamerank.test', N'superadmin', N'SEED_SIN_LOGIN', 3, 0, 1, SYSUTCDATETIME(), '1.0'),
-    (2, N'moderador@gamerank.test',  N'moderador',  N'SEED_SIN_LOGIN', 2, 0, 1, SYSUTCDATETIME(), '1.0'),
-    (3, N'lucia@gamerank.test',      N'lucia_rpg',  N'SEED_SIN_LOGIN', 1, 0, 1, SYSUTCDATETIME(), '1.0'),
-    (4, N'tomas@gamerank.test',      N'tomi_fps',   N'SEED_SIN_LOGIN', 1, 0, 1, SYSUTCDATETIME(), '1.0'),
-    (5, N'sofia@gamerank.test',      N'sofi_indie', N'SEED_SIN_LOGIN', 1, 0, 1, SYSUTCDATETIME(), '1.0'),
-    (6, N'spammer@gamerank.test',    N'spammer99',  N'SEED_SIN_LOGIN', 1, 1, 1, SYSUTCDATETIME(), '1.0');
+    (1, N'superadmin@gamerank.test', N'superadmin', N'$2a$11$92Cdrfb4.lalSjIHtpgiYetiRPgWSRJbAsHka/F5cDXON8/g1XZ/q', 3, 0, 1, SYSUTCDATETIME(), '1.0'),
+    (2, N'moderador@gamerank.test',  N'moderador',  N'$2a$11$92Cdrfb4.lalSjIHtpgiYetiRPgWSRJbAsHka/F5cDXON8/g1XZ/q', 2, 0, 1, SYSUTCDATETIME(), '1.0'),
+    (3, N'lucia@gamerank.test',      N'lucia_rpg',  N'$2a$11$92Cdrfb4.lalSjIHtpgiYetiRPgWSRJbAsHka/F5cDXON8/g1XZ/q', 1, 0, 1, SYSUTCDATETIME(), '1.0'),
+    (4, N'tomas@gamerank.test',      N'tomi_fps',   N'$2a$11$92Cdrfb4.lalSjIHtpgiYetiRPgWSRJbAsHka/F5cDXON8/g1XZ/q', 1, 0, 1, SYSUTCDATETIME(), '1.0'),
+    (5, N'sofia@gamerank.test',      N'sofi_indie', N'$2a$11$92Cdrfb4.lalSjIHtpgiYetiRPgWSRJbAsHka/F5cDXON8/g1XZ/q', 1, 0, 1, SYSUTCDATETIME(), '1.0'),
+    (6, N'spammer@gamerank.test',    N'spammer99',  N'$2a$11$92Cdrfb4.lalSjIHtpgiYetiRPgWSRJbAsHka/F5cDXON8/g1XZ/q', 1, 1, 1, SYSUTCDATETIME(), '1.0');
 SET IDENTITY_INSERT dbo.Usuario OFF;
 GO
 

@@ -1,5 +1,4 @@
 (() => {
-  cabecera('perfil.html');
   pie();
   const main = $('#main');
   const requested = new URLSearchParams(location.search).get('id');

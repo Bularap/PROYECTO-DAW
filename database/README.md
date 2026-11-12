@@ -17,6 +17,8 @@ El diagrama todavía muestra las columnas de RAWG: `Juego.SteamAppId` y `Genero.
 | `04_procedures.sql` | Procedimientos por módulo (M01–M08), uno o más por caso de uso. Se guarda en UTF-8 con BOM para conservar los acentos de los mensajes |
 | `05_seed.sql` | Roles, estados de lista, catálogo de ejemplo con ids reales de Steam, usuarios y actividad de prueba |
 | `06_carga_masiva.sql` | Opcional: simulación de volumen (50k juegos, 20k usuarios, ~1M calificaciones, 100k reseñas) |
+| `07_actualizar_cuenta.sql` | Migración para bases ya creadas: procedimientos de edición de perfil y cambio de contraseña |
+| `08_usuarios_prueba.sql` | Migración para bases ya creadas: contraseña de los usuarios de prueba |
 
 ```bash
 cd database
@@ -57,8 +59,21 @@ Medido a través de la API sobre 50k juegos, 20k usuarios, ~1M calificaciones y 
 
 ## Usuarios de prueba
 
-Los usuarios del seed tienen un `PasswordHash` de relleno (`SEED_SIN_LOGIN`) y no permiten iniciar sesión. Para probar el login, registrarse desde la aplicación y promover la cuenta:
+Todos los usuarios del seed entran con la contraseña `GameRank2026`:
 
-```sql
-EXEC dbo.sp_AsignarRol @SuperAdminId = 1, @UsuarioId = <id>, @RolId = 3;
+| Correo | Usuario | Rol | Para probar |
+|---|---|---|---|
+| `superadmin@gamerank.test` | superadmin | Super Administrador | Roles, auditoría, respaldos y restauración, además de la moderación |
+| `moderador@gamerank.test` | moderador | Administrador | Moderación de reseñas y bloqueo de cuentas |
+| `lucia@gamerank.test` | lucia_rpg | Jugador | Reseñas, calificaciones y biblioteca con datos cargados |
+| `tomas@gamerank.test` | tomi_fps | Jugador | Ídem |
+| `sofia@gamerank.test` | sofi_indie | Jugador | Ídem |
+| `spammer@gamerank.test` | spammer99 | Jugador bloqueado | El login rechaza la cuenta suspendida (403) |
+
+Si la base se creó antes de este cambio, ejecutar `08_usuarios_prueba.sql` para asignarles la contraseña sin volver a crear la base:
+
+```bash
+sqlcmd -S "." -E -C -d GameRank -i 08_usuarios_prueba.sql
 ```
+
+Son cuentas solo para desarrollo y demostración: la contraseña es pública.

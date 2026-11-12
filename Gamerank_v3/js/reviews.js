@@ -21,7 +21,12 @@
   function setBusy(value) {
     busy = value;
     form.setAttribute('aria-busy', String(value));
-    form.querySelectorAll('input, textarea, select, button').forEach(control => { control.disabled = value; });
+    form.querySelectorAll('input, textarea, select, button').forEach(control => { control.disabled = value || !GameRankAuth.user(); });
+  }
+
+  function applySession() {
+    $('#review-login').hidden = !!GameRankAuth.user();
+    setBusy(busy);
   }
 
   function rating() {
@@ -223,7 +228,7 @@
 
   $('#alcance').addEventListener('change', () => { page = 1; loadFeed(); });
   $('#filtro-puntaje').addEventListener('change', loadFeed);
-  window.addEventListener('gamerank:sessionchange', () => { reset(); setBusy(false); message(''); loadFeed(); });
+  window.addEventListener('gamerank:sessionchange', () => { reset(); busy = false; applySession(); message(''); loadFeed(); });
 
   async function initialize() {
     try {
@@ -231,6 +236,7 @@
       $('#estado').append(...states.map(state => el('option', { value: state.estadoListaId }, state.nombre)));
     } catch (error) { message(`No se pudieron cargar los estados de tu lista. Podés guardar reseña y puntuación. ${error.message}`, true); }
     await GameRankAuth.ready;
+    applySession();
     loadFeed();
     const id = Number(new URLSearchParams(location.search).get('juegoId'));
     if (Number.isInteger(id) && id > 0) {
