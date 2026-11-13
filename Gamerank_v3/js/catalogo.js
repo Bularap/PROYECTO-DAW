@@ -9,6 +9,8 @@
   const pageSize = 12;
   const fallbackCover = 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="440" height="275"><rect width="100%" height="100%" fill="#1f2630"/><text x="50%" y="50%" text-anchor="middle" fill="#9aa4b2" font-family="sans-serif" font-size="22">Sin portada</text></svg>');
   let page = 1;
+  let hasMore = true;
+  let loading = false;
   let searchVersion = 0;
   let games = [];
   let states = [];
@@ -142,55 +144,107 @@
     }
   }
 
-  async function findGames() {
-    const version = ++searchVersion;
-    games = [];
-    pager.replaceChildren();
-    results.setAttribute('aria-busy', 'true');
-    showStatus(results, 'Cargando juegos…');
-    showNotice(notice, '');
+  function validPage(data) {
+    return Array.isArray(data?.juegos) && Number.isInteger(data.total) && data.total >= 0
+      && Number.isInteger(data.pagina) && data.pagina >= 1 && Number.isInteger(data.tamanioPagina) && data.tamanioPagina >= 1
+      && !data.juegos.some(game => !Number.isInteger(game.juegoId) || typeof game.titulo !== 'string'
+        || !Array.isArray(game.generos) || game.generos.some(genre => typeof genre.nombre !== 'string')
+        || (game.promedioCalificacion !== null && (typeof game.promedioCalificacion !== 'number' || game.promedioCalificacion < 1 || game.promedioCalificacion > 5)));
+  }
+
+  function goToSearch() {
+    window.scrollTo({ top: 0 });
+    search.focus({ preventScroll: true });
+  }
+
+  function showEnd() {
+    pager.replaceChildren(el('p', { class: 'meta fin-catalogo', role: 'status' },
+      el('button', { type: 'button', class: 'btn-link', onclick: goToSearch }, search.value.trim() ? 'Buscá otro juego' : 'Buscá un juego'),
+      ' para ver más resultados.'));
+  }
+
+  function checkEnd() {
+    if (hasMore && !loading && pager.getBoundingClientRect().top < innerHeight + 600) loadPage();
+  }
+
+  async function loadPage() {
+    const version = searchVersion;
+    const first = page === 1;
+    loading = true;
+    if (first) {
+      results.setAttribute('aria-busy', 'true');
+      showStatus(results, 'Cargando juegos…');
+    } else {
+      pager.replaceChildren(el('p', { class: 'meta', role: 'status' }, 'Cargando más juegos…'));
+    }
     const query = search.value.trim();
     const params = new URLSearchParams({ orden: orderSelect.value, pagina: page, tamanioPagina: pageSize });
     if (query) params.set('texto', query);
     if (genreSelect.value) params.set('generos', genreSelect.value);
-    $('#titulo-lista').textContent = query ? `Resultados para “${query}”` : orderSelect.selectedOptions[0].textContent;
     try {
       const data = await GameRankApi.request(`/juegos?${params}`, { authenticated: false, timeout: 30000 });
       if (version !== searchVersion) return;
-      if (!Array.isArray(data?.juegos) || !Number.isInteger(data.total) || data.total < 0
-        || !Number.isInteger(data.pagina) || data.pagina < 1 || !Number.isInteger(data.tamanioPagina) || data.tamanioPagina < 1
-        || data.juegos.some(game => !Number.isInteger(game.juegoId) || typeof game.titulo !== 'string'
-          || !Array.isArray(game.generos) || game.generos.some(genre => typeof genre.nombre !== 'string')
-          || (game.promedioCalificacion !== null && (typeof game.promedioCalificacion !== 'number' || game.promedioCalificacion < 1 || game.promedioCalificacion > 5)))) throw catalogError();
-      page = data.pagina;
-      games = data.juegos;
+      if (!validPage(data)) throw catalogError();
+      const known = new Set(games.map(game => game.juegoId));
+      const fresh = data.juegos.filter(game => !known.has(game.juegoId));
+      games.push(...fresh);
       if (data.parcial) showNotice(notice, 'Steam no está disponible. Mostramos los resultados guardados en GAME RANK; podrían faltar juegos.');
-      if (games.length) renderGames();
-      else showStatus(results, data.parcial
-        ? 'No hay resultados guardados para esta búsqueda. Probá más tarde o cambiá los filtros.'
-        : 'No encontramos juegos con esos filtros. Probá otra búsqueda.');
-      const totalPages = Math.max(1, Math.ceil(data.total / data.tamanioPagina));
-      if (data.total > 0 || page > 1) pager.replaceChildren(
-        el('button', { type: 'button', class: 'btn btn-ghost', disabled: page === 1, onclick: () => { page--; findGames(); } }, 'Anterior'),
-        el('span', { class: 'meta', role: 'status' }, `Página ${page} de ${totalPages} · ${data.total} juegos`),
-        el('button', { type: 'button', class: 'btn btn-ghost', disabled: page >= totalPages, onclick: () => { page++; findGames(); } }, 'Siguiente'));
+      hasMore = data.juegos.length > 0 && page * data.tamanioPagina < data.total;
+      if (first && !games.length) {
+        showStatus(results, data.parcial
+          ? 'No hay resultados guardados para esta búsqueda. Probá más tarde o cambiá los filtros.'
+          : 'No encontramos juegos con esos filtros. Probá otra búsqueda.');
+        pager.replaceChildren();
+        return;
+      }
+      if (first) renderGames();
+      else results.append(...fresh.map(card));
+      page++;
+      if (hasMore) pager.replaceChildren();
+      else showEnd();
     } catch (error) {
       if (version !== searchVersion) return;
-      showStatus(results, error.message, 'error');
-      results.firstChild.append(' ', el('button', { type: 'button', class: 'btn btn-ghost', onclick: findGames }, 'Reintentar'));
+      hasMore = false;
+      const retry = el('button', { type: 'button', class: 'btn btn-ghost', onclick: () => { hasMore = true; loadPage(); } }, 'Reintentar');
+      if (first) {
+        showStatus(results, error.message, 'error');
+        results.firstChild.append(' ', retry);
+      } else {
+        showStatus(pager, error.message, 'error');
+        pager.firstChild.append(' ', retry);
+      }
     } finally {
-      if (version === searchVersion) results.removeAttribute('aria-busy');
+      if (version === searchVersion) {
+        loading = false;
+        results.removeAttribute('aria-busy');
+        setTimeout(checkEnd);
+      }
     }
   }
 
+  function findGames() {
+    searchVersion++;
+    page = 1;
+    games = [];
+    hasMore = true;
+    loading = false;
+    pager.replaceChildren();
+    showNotice(notice, '');
+    const query = search.value.trim();
+    $('#titulo-lista').textContent = query ? `Resultados para “${query}”` : orderSelect.selectedOptions[0].textContent;
+    loadPage();
+  }
+
+  window.addEventListener('scroll', checkEnd, { passive: true });
+  window.addEventListener('resize', checkEnd);
+
   $('#filtros').addEventListener('submit', event => {
     event.preventDefault();
-    page = 1;
     findGames();
   });
-  search.addEventListener('input', debounce(() => { page = 1; findGames(); }));
-  genreSelect.addEventListener('change', () => { page = 1; findGames(); });
-  orderSelect.addEventListener('change', () => { page = 1; findGames(); });
+  search.addEventListener('input', debounce(findGames));
+  genreSelect.addEventListener('change', findGames);
+  orderSelect.addEventListener('change', findGames);
   window.addEventListener('gamerank:sessionchange', syncPersonalLibrary);
   GameRankAuth.ready.then(syncPersonalLibrary);
   loadGenres();
