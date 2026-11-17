@@ -33,7 +33,7 @@ const PAGINAS = [
   ['diario.html', 'Diario'],
   ['perfil.html', 'Perfil']
 ];
-const PAGINA_DEL_MENU = { 'editar-perfil.html': 'perfil.html', 'configuracion.html': 'perfil.html', '': 'index.html' };
+const PAGINA_DEL_MENU = { 'juego.html': 'index.html','editar-perfil.html': 'perfil.html', 'configuracion.html': 'perfil.html', '': 'index.html' };
 
 function sesionRecordada() {
   try {
