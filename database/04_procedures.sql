@@ -717,7 +717,7 @@ BEGIN
 END
 GO
 
--- Ley 25.326 (derecho de supresion): baja definitiva de la cuenta y sus datos.
+-- Baja de cuenta y datos asociados, salvo referencias de auditoria o respaldos.
 CREATE OR ALTER PROCEDURE dbo.sp_EliminarUsuario
     @UsuarioId INT
 AS
@@ -727,7 +727,7 @@ BEGIN
 
     IF EXISTS (SELECT 1 FROM dbo.Auditoria WHERE UsuarioActorId = @UsuarioId)
        OR EXISTS (SELECT 1 FROM dbo.Respaldo WHERE UsuarioId = @UsuarioId)
-        THROW 50409, N'La cuenta tiene registros de auditoría; quite primero su rol administrativo.', 1;
+        THROW 50409, N'No se puede completar la baja porque la cuenta está vinculada a registros de auditoría o respaldos. Cambiar el rol no elimina estas referencias; su tratamiento está pendiente de definición.', 1;
 
     BEGIN TRANSACTION;
 

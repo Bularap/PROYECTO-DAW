@@ -8,7 +8,7 @@ namespace GameRank.BLL;
 
 public class AuthBLL
 {
-    private const string VersionPolitica = "1.0";
+    private const string VersionPolitica = "1.1";
 
     private readonly UsuarioDAL _dal;
     private readonly AvatarServicio _avatares;

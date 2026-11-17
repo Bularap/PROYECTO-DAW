@@ -113,18 +113,20 @@ La consulta más lenta, las reseñas recientes en la página 500, alcanzó 749 m
 - **Trazabilidad:** toda acción de moderación, cambio de rol, respaldo y restauración queda registrada en `Auditoria` con su responsable.
 - **Pruebas:** se verificaron los flujos principales y alternativos de los casos de uso contra la API en ejecución, con 406 casos de prueba automatizados que se encuentran en `backend/pruebas`.
 
-## Normativa: Ley 25.326
+## RNF05: información de privacidad y consentimiento explícito
 
-- **Consentimiento:** el registro exige aceptar la Política de Privacidad. La base guarda la aceptación, la fecha y la versión de la política.
+El requisito de enlace al aviso y consentimiento explícito está implementado. Estos controles no acreditan por sí solos cumplimiento integral de la Ley 25.326.
+
+- **Consentimiento:** el registro exige aceptar la Política de Privacidad. La base guarda la aceptación, la fecha y la versión de la política; los nuevos registros usan la versión 1.1, sin modificar consentimientos históricos.
 - **Minimización:** el perfil público no muestra el correo. Las exportaciones CSV excluyen correos, contraseñas, sesiones y auditoría.
 - **Seguridad de los datos:** las contraseñas y los tokens no se almacenan en texto plano.
-- **Supresión:** el usuario puede eliminar su cuenta y sus datos con `POST /api/auth/baja`.
+- **Edición:** el usuario puede consultar su cuenta y editar nombre y avatar; el cambio de correo y las preferencias de visibilidad todavía no están disponibles.
+- **Baja:** `POST /api/auth/baja` comprueba la contraseña y elimina la cuenta, sesiones, reseñas, calificaciones, biblioteca y reportes propios, salvo que existan referencias en `Auditoria.UsuarioActorId` o `Respaldo.UsuarioId`. El bloqueo también afecta a cuentas que antes tuvieron permisos administrativos; cambiar el rol no elimina esas referencias. No se borran el historial administrativo ni las copias de seguridad, que pueden conservar referencias y fragmentos de contenido.
 
-**Pendientes de revisar:**
+**Pendientes:**
 
-- Las cuentas con registros de auditoría, como las de administradores, no se pueden eliminar directamente. Debe aclararse en la Política de Privacidad o resolverse anonimizando la cuenta.
-- El sistema todavía no permite rectificar el correo o el nombre de usuario. El aviso de privacidad ofrece hacerlo por correo electrónico.
-- La página de Política de Privacidad corresponde al front.
+- Definir la conservación y atribución histórica de auditorías y respaldos antes de resolver la baja de cuentas vinculadas. No se ha aprobado eliminar historial, cambiar referencias ni anonimizar cuentas.
+- Definir y publicar la identidad del responsable, un contacto de privacidad verificado y los criterios de conservación y atención de solicitudes. El aviso canónico está en `Gamerank_v3/reviews.html#privacidad`; no ofrece un correo ficticio.
 
 ## Estrategia de backup
 
