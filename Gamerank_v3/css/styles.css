@@ -137,3 +137,21 @@ fieldset { border: 0; padding: 0; margin: 0 0 1rem; }
 .grid.compact { grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); }
 .aviso-flotante { position: fixed; left: 50%; bottom: 1.5rem; transform: translateX(-50%); z-index: 20; margin: 0; max-width: calc(100% - 2rem); background: var(--surface-2); border: 1px solid var(--gold); color: var(--text); padding: .6rem 1.1rem; border-radius: var(--radius); box-shadow: 0 6px 24px rgba(0,0,0,.45); }
 .aviso-flotante:empty { display: none; }
+
+.card-link { color: inherit; text-decoration: none; }
+.card-link:hover { color: var(--gold); }
+.volver { margin: 1.5rem 0 1rem; }
+.volver a { text-decoration: none; }
+.ficha { display: grid; grid-template-columns: minmax(260px, 460px) 1fr; gap: 2rem; align-items: start; padding-bottom: 2rem; }
+.ficha-portada { width: 100%; aspect-ratio: 460/215; object-fit: cover; border-radius: var(--radius); border: 1px solid var(--line); background: var(--surface-2); }
+.ficha-info h1 { margin: 0 0 .5rem; font-size: clamp(1.6rem, 4vw, 2.4rem); }
+.ficha-puntaje { margin: 0 0 1rem; font-size: 1.1rem; }
+.ficha-sinopsis { margin: 0 0 1.25rem; }
+.ficha-datos { display: grid; grid-template-columns: max-content 1fr; gap: .4rem 1rem; margin: 0 0 1rem; }
+.ficha-datos dt { color: var(--muted); }
+.ficha-datos dd { margin: 0; }
+.ficha-info .card-actions { align-items: center; }
+.ficha-info .card-actions .btn { flex: 0 1 auto; }
+.ficha-info .card-actions select { flex: 0 1 260px; width: auto; }
+.ficha-resenas { border-top: 1px solid var(--line); padding: 1.5rem 0 2rem; }
+@media (max-width: 800px) { .ficha { grid-template-columns: 1fr; } }

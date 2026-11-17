@@ -85,9 +85,10 @@
       el('span', { class: 'stars', 'aria-hidden': 'true' }, stars(Math.round(game.promedioCalificacion))),
       ` ${game.promedioCalificacion.toFixed(1)}/5 (${game.cantidadCalificaciones})`)
       : el('p', { class: 'meta' }, 'Sin calificaciones');
-    return el('article', { class: 'card' }, cover,
+    const detail = `juego.html?juegoId=${game.juegoId}`;
+    return el('article', { class: 'card' }, el('a', { href: detail, tabindex: '-1', 'aria-hidden': 'true' }, cover),
       el('div', { class: 'card-body' },
-        el('h3', {}, game.titulo),
+        el('h3', {}, el('a', { class: 'card-link', href: detail }, game.titulo)),
         el('p', { class: 'meta' }, `${genres} · ${release}`), rating,
         el('div', { class: 'card-actions' },
           el('a', { class: 'btn', href: `reviews.html?juegoId=${game.juegoId}`, title: 'Escribir o editar una reseña de este juego' }, 'Reseñas'),
