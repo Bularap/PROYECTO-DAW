@@ -199,7 +199,8 @@
     return el('article', { class: 'review' },
       el('h3', {}, review.titulo || 'Juego'), el('div', { class: 'stars' }, score),
       el('p', {}, review.contenido),
-      el('p', { class: 'meta' }, `${review.nombreUsuario || GameRankAuth.user()?.nombreUsuario || ''} · ${new Date(review.fechaPublicacion).toLocaleDateString('es-AR')}${review.editada ? ' · Editada' : ''}`), actions);
+      el('p', { class: 'meta' }, `${review.nombreUsuario || GameRankAuth.user()?.nombreUsuario || ''} · ${new Date(review.fechaPublicacion).toLocaleDateString('es-AR')}${review.editada ? ' · Editada' : ''}`), actions,
+      own ? '' : GameRankReportes.control(review));
   }
 
   async function loadFeed() {

@@ -94,6 +94,12 @@ fieldset { border: 0; padding: 0; margin: 0 0 1rem; }
 .review h3 { margin: 0; font-size: 1.1rem; }
 .review p { margin: 0; }
 .review-actions { display: flex; gap: .5rem; margin-top: .4rem; }
+.report { display: grid; gap: .4rem; justify-items: start; }
+.report .btn-link { font-size: .9rem; color: var(--muted); }
+.report .btn-link:disabled { cursor: default; text-decoration: none; }
+.report-form { width: 100%; max-width: 32rem; background: var(--surface-2); border-radius: var(--radius); padding: .8rem; }
+.report-form .field { margin-bottom: .6rem; }
+.report-form textarea { width: 100%; }
 .list-head { display: flex; justify-content: space-between; align-items: center; gap: 1rem; flex-wrap: wrap; margin-bottom: .5rem; }
 .list-head select { width: auto; }
 

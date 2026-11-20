@@ -76,6 +76,7 @@ const GameRankData = (() => {
     state: id => personal(`/juegos/${id}/mi-estado`),
     saveReview: (gameId, reviewId, contenido) => personal(reviewId ? `/resenas/${reviewId}` : `/juegos/${gameId}/resenas`, { method: reviewId ? 'PUT' : 'POST', body: { contenido } }),
     removeReview: id => personal(`/resenas/${id}`, { method: 'DELETE' }),
+    report: (id, motivo, comentario) => personal(`/resenas/${id}/reportes`, { method: 'POST', body: { motivo, comentario: comentario || null } }),
     rate: (id, puntuacion) => personal(`/juegos/${id}/calificacion`, { method: 'PUT', body: { puntuacion } }),
     unrate: id => personal(`/juegos/${id}/calificacion`, { method: 'DELETE' }),
     setState: (id, estadoListaId) => personal(`/juegos/${id}/biblioteca`, { method: 'PUT', body: { estadoListaId } }),
