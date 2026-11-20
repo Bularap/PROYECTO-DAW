@@ -115,7 +115,8 @@
     return el('article', { class: 'review' },
       el('div', { class: 'stars' }, score),
       el('p', {}, item.contenido),
-      el('p', { class: 'meta' }, `${item.nombreUsuario}${date ? ` · ${date.toLocaleDateString('es-AR')}` : ''}${item.editada ? ' · Editada' : ''}`));
+      el('p', { class: 'meta' }, `${item.nombreUsuario}${date ? ` · ${date.toLocaleDateString('es-AR')}` : ''}${item.editada ? ' · Editada' : ''}`),
+      GameRankReportes.control(item));
   }
 
   async function loadReviews() {
@@ -166,6 +167,6 @@
     }
   }
 
-  window.addEventListener('gamerank:sessionchange', () => { if (game) loadPersonal(); });
+  window.addEventListener('gamerank:sessionchange', () => { if (game) { loadPersonal(); loadReviews(); } });
   load();
 })();
